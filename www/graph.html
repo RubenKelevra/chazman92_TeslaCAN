@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style type="text/css">
+  .line {
+    fill: none;
+    stroke: #ffab00;
+    stroke-width: 3;
+  }
+
+  .xaxis .tick {
+    opacity: 0;
+  }
+</style>
+
+<body>
+</body>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+  //Proposed dynamaic chart for acceleration.
+
+
+  // Example as a starting point then modified to make it dynamic
+  // https://bl.ocks.org/gordlea/27370d1eea8464b04538e6d8ced39e89
+
+  var innerWidth = window.innerWidth;
+  var innerHeight = window.innerHeight
+  // var innerWidth = 400;
+  // var innerHeight = 150;
+  // 2. Use the margin convention practice
+
+  var margin = {
+      top: 10,
+      right: 10,
+      bottom: 50,
+      left: 20
+    },
+    width = innerWidth - margin.left - margin.right // Use the window's width
+    ,
+    height = innerHeight - margin.top - margin.bottom; // Use the window's height
+
+  var long_term_n = 1000;
+
+  // An array of objects of length N. Each object has key -> value pair, the key being "y" and the value is a random number ranging from -5 to 5.
+  var long_term_dataset = d3.range(long_term_n).map(function(d) {
+    return {
+      "y": d3.randomUniform(-5, 5)()
+    }
+  })
+
+  // The number of datapoints displayed on the chart
+  var n = 100;
+
+
+  // 5. X scale will use the index of our data
+  var xScale = d3.scaleLinear()
+    .domain([0, n]) // input
+    .range([0, width]); // output
+
+  // 6. Y scale will use the randomly generate number
+  var yScale = d3.scaleLinear()
+    .domain([-5, 5]) // input
+    .range([height, 0]); // output
+
+  // 7. d3's line generator
+  var line = d3.line()
+    .x(function(d, i) {
+      return xScale(i);
+    }) // set the x values for the line generator
+    .y(function(d) {
+      return yScale(d.y);
+    }) // set the y values for the line generator
+    .curve(d3.curveMonotoneX) // apply smoothing to the line
+
+  // 1. Add the SVG to the page and employ #2
+  var svg = d3.select("body").append("svg")
+    .attr("id", "my_chart")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // 3. Call the x axis in a group tag
+  svg.append("g")
+    .attr("class", "xaxis")
+    .attr("transform", "translate(0," + height / 2 + ")")
+    .call(d3.axisBottom(xScale)); // Create an axis component with d3.axisBottom
+
+
+
+  // 4. Call the y axis in a group tag
+  svg.append("g")
+    .attr("class", "yaxis")
+    .call(d3.axisLeft(yScale)); // Create an axis component with d3.axisLeft
+
+
+
+
+  function draw_line() {
+    // get the data for the segment to be displayed
+    dataset = long_term_dataset.slice(time_i, time_i + n + 1);
+
+    //clear the previous line draw on the chart
+    d3.select("#my_path").remove();
+
+    //Append the path, bind the data, and call the line generator
+    svg.append("path")
+      .attr("id", "my_path")
+      .datum(dataset) // 10. Binds data to the line
+      .attr("class", "line") // Assign a class for styling
+      .attr("d", line); // 11. Calls the line generator
+  }
+
+
+  time_i = 0;
+
+  function redraw() {
+    // When we reach the end of the long data set, start from the beginning again
+    if (time_i > long_term_n)
+      time_i = 0;
+    else
+      time_i += 1;
+
+    draw_line();
+
+    //if (time_i < 5)
+    setTimeout(redraw, 50);
+  }
+
+  redraw();
+</script>
