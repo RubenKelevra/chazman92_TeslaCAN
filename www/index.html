@@ -13,7 +13,7 @@
   longAccel = 0;
   display_data = [];
   long_term_dataset =[];
-  
+
     function updateDataset(lat,long) {
       /*Changing value and returing it.*/
       longAccel = long;
@@ -57,7 +57,7 @@
         $('#' + msgi).css('color', payload2);
 
         if (msgi == "accel") {
-          updateDataset(payload1,payload2) 
+          updateDataset(payload1,payload2)
           $('#lat-accel').html(payload1);
           $('#lon-accel').html(payload2);
         } else {
@@ -124,13 +124,13 @@
       opacity: 0;
     }
     .xaxis line {
-      stroke: white;
+      stroke: #FFFF00;
     }
     .xaxis path {
-      stroke: white;
+      stroke: #FFFF00;
     }
     .xaxis text {
-      fill: white;
+      fill: #FFFF00;
     }
 
     .container-fluid {
@@ -214,7 +214,7 @@
     } */
 
     .bg-dark {
-      background-color: #00b140 !important
+      background-color: #009933 !important
         /* background-color: #009933  */
     }
 
@@ -346,16 +346,14 @@
       <div class="col-sm mx-1">
         <div class="card text-light bg-dark h-100 text-center">
         <div class="card-body font-weight-bold">
-          Test Row:
           <br>
-          <span style="float:left;">&nbspDisengagements: </span> <span id="disengage-count" style="font-size: 20px;">N/A</span>
+          <span style="float:left;">&nbspDisengage: </span> <span id="disengage-count" style="font-size: 20px;">N/A</span>
           <br>
         </div>
       </div>
       </div>
     </div>
-    
-    <h1>Fading tail</h1>
+    <br>
     <div class=bg-dark id="fading_tail"></div>
   </div>
 
@@ -370,8 +368,8 @@
   // https://bl.ocks.org/gordlea/27370d1eea8464b04538e6d8ced39e89
   //https://jsfiddle.net/Mdriver/pyfrg8am/
 
-    //GLOBAL VARIABLES	
-  var long_redraw_time_ms = 50; //can be changed 
+    //GLOBAL VARIABLES
+  var long_redraw_time_ms = 50; //can be changed
   //var display_n = 500;  //results in ten seconds of data - adjust to change the linger time
   var long_term_dataset = d3.range(100).map(function(d) { return {"y": 0} });
   //var display_data = d3.range(display_n).map(function(d) {return {"lat": 0,"long": 0}}); //start with a full set of empty records
@@ -421,15 +419,14 @@
     .attr("width", long_width + long_margin.left + long_margin.right)
     .attr("height", long_height + long_margin.top + long_margin.bottom)
     .append("g")
-//    .style('fill', '#FFFF00')
     .attr("transform", "translate(" + long_margin.left + "," + long_margin.top + ")");
 
   // 3. Call the x axis in a group tag
   svg.append("g")
     .attr("class", "xaxis")
     .attr("transform", "translate(0," + long_height / 2 + ")")
-    //.style('fill', '#FFFFFF')
     .call(d3.axisBottom(long_xScale)); // Create an axis component with d3.axisBottom
+
     //Title
     svg.append("text")
       .attr("x", 0)
@@ -479,25 +476,25 @@ redraw1();
 <script>
   //Assumptions
   //Data will be pushed to display_data at 50 samples per second.
-  
-  //GLOBAL VARIABLES	
-  var fading_tail_redraw_time_ms = 100; //can be changed 
+
+  //GLOBAL VARIABLES
+  var fading_tail_redraw_time_ms = 100; //can be changed
   var display_n = 100;  //results in ten seconds of data - adjust to change the linger time
   var display_data = d3.range(display_n).map(function(d) {return {"lat": 0,"long": 0}}); //start with a full set of empty records
   var dual_yScale, dual_xScale, tailRadiusScale, tailFillScale;
-  
+
   //global variables for test data only
   //var test_data = [], test_data_i = 0;
-  
+
   //Execute the code
-  
+
   // Replace the testing functions below with code that pushes a new pair on every 20ms and removes the oldest pair. See TESTING_push_test_data_to_displayset for examples.
   //TESTING_get_test_data();
   //TESTING_push_test_data_to_displayset();
   fading_tail_draw_base();
   fading_tail_redraw_loop();
-  
-  
+
+
   function fading_tail_redraw_loop() {
     fading_tail_redraw();
     setTimeout(fading_tail_redraw_loop, fading_tail_redraw_time_ms); //do it again in 0.05 seconds
@@ -509,23 +506,23 @@ redraw1();
     var dual_margin = {top: 1, right: 1, bottom: 1, left: 1}
       , dual_width = dual_innerWidth - dual_margin.left - dual_margin.right
       , dual_height = dual_innerHeight - dual_margin.top - dual_margin.bottom;
-  
+
     //Adjust the parameters below to impact the look
     dual_xScale = d3.scaleLinear().domain([-2,2]).range([0, dual_width]);
     dual_yScale = d3.scaleLinear().domain([-3, 3]).range([dual_height, 0]);
     tailFillScale = d3.scaleLinear().domain([0,display_n]).range(["#FFFFFF","#FFFF00"]); //Fade to , Fade From
    // tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([5,15]);
     tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([1,5]); //circle size to size, from size
-  
+
     // Start drawing the base
     svg2 = d3.select("#fading_tail").append("svg")
       .attr("id","my_chart2")
       .attr("width", dual_width + dual_margin.left + dual_margin.right)
       .attr("height", dual_height + dual_margin.top + dual_margin.bottom)
-      .attr("fill", "#00B140")
+      .attr("fill", "#009933")
       .append("g")
       .attr("transform", "translate(" + dual_margin.left + "," + dual_margin.top + ")");
-  
+
     //Draw reference lines
     svg2.append('rect')
       .style("stroke", "yellow")
@@ -533,30 +530,30 @@ redraw1();
       .attr("x1", 0)
       .attr("y1", 0)
       .attr("width", dual_width)
-      .attr("height", dual_height); 		
+      .attr("height", dual_height);
     svg2.append('line')
       .style("stroke", "yellow")
       .style("stroke-width", 1)
       .attr("x1", 0)
       .attr("y1", dual_yScale(0))
       .attr("x2", dual_width)
-      .attr("y2", dual_yScale(0)); 	
+      .attr("y2", dual_yScale(0));
     svg2.append('line')
       .style("stroke", "yellow")
       .style("stroke-width", 1)
       .attr("x1", dual_xScale(0))
       .attr("y1", 0)
       .attr("x2", dual_xScale(0))
-      .attr("y2", dual_height); 	
+      .attr("y2", dual_height);
   }
-  
+
   function fading_tail_redraw() {
     svg2.select("#my_path2").remove();
     my_path2 = svg2.append("g").attr("id","my_path2")
     for (var i = 0; i < display_data.length; i++) {
-      if (display_data[i]) { // Ignore record if undefined, sometime a undefined record is added to display_data and it breaks the system  
+      if (display_data[i]) { // Ignore record if undefined, sometime a undefined record is added to display_data and it breaks the system
         if (i == display_data.length-1) {
-          strokewidth = 6; 
+          strokewidth = 6;
           stroke = "red"; }
         else {
           strokewidth = 0;
@@ -564,7 +561,7 @@ redraw1();
         my_path2.append("circle")
         .attr("id","my_path2")
         .attr("cx", dual_xScale(display_data[i].lat))
-        .attr("cy", dual_yScale(display_data[i].long))	 
+        .attr("cy", dual_yScale(display_data[i].long))
         .style('r', tailRadiusScale(i))
         .style('fill', tailFillScale(i))
         .style("stroke-width", strokewidth)
@@ -576,7 +573,7 @@ redraw1();
 
 </html>
 <!-- These are all the variables that impact the look:
-var fading_tail_redraw_time_ms = 50; //can be changed 
+var fading_tail_redraw_time_ms = 50; //can be changed
 var display_n = 500;  //results in ten seconds of data - adjust to change the linger time
 var innerWidth = 150; //adjust to control the display size of the visualisation
 var innerHeight = 150;
@@ -584,5 +581,5 @@ xScale = d3.scaleLinear().domain([-2,2]).range([0, width]);
 yScale = d3.scaleLinear().domain([-3, 3]).range([height, 0]);
 tailFillScale = d3.scaleLinear().domain([0,display_n]).range(["#000000","#ffffff"]);
 tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([5,15]);
-strokewidth = 3; 
+strokewidth = 3;
 stroke = "yellow"; -->
