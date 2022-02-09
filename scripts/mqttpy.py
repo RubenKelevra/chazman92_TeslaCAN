@@ -28,8 +28,8 @@ timestamp_3B6 = time.time()
 # currentOdometer = 0
 # ApEngagedTripStartOdometer = None
 # #ApTripLength = 0
-# ApDisengageCounter = 0
-# ApDisengagePerKm = 0
+ApDisengageCounter = 0
+ApEngaged = False
 
 
 
@@ -52,7 +52,7 @@ except OSError:
     print('Cannot find generic bus')
 
 bus.set_filters([
-                 {"can_id":0x04F, "can_mask": 0xFFFFFFF, "extended": False},
+                # {"can_id":0x04F, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x101, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x108, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x111, "can_mask": 0xFFFFFFF, "extended": False},
@@ -120,8 +120,8 @@ def listenToCan(client):
                     print("Message {:03X} not handled".format(messageID))
                     pass
             except Exception as ex:
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
+                template = "Msg: {0:03X} An exception of type {1} occurred. Arguments:\n{2!r}"
+                message = template.format(messageID, type(ex).__name__, ex.args)
                 print (message)
     except KeyboardInterrupt:
         # Catch keyboard interrupt
@@ -144,7 +144,6 @@ def publish_mqtt(client, mqtt_topic, mqtt_message):
         print(f"Failed to send message to topic {topic}")
 
     return
-
 
 def GPSLatLong(client, msg):
     # BO_ 79 ID04FGPSLatLong: 8 ChassisBus
@@ -199,24 +198,29 @@ def DirTorque(client, msg):
 
 def RCM_inertial2(client, msg):
     # BO_ 273 ID111RCM_inertial2: 8 ChassisBus
-    decoded = db.decode_message(msg.arbitration_id, msg.data)
-    print(decoded)
-    decodedLatAccel = decoded['RCM_lateralAccel'] #*0.101972 #Convert m/s^2 to Gs
-    decodedLongAccel = decoded['RCM_longitudinalAccel'] #*0.101972 #Convert m/s^2 to Gs
+    try:
 
-    # with open('accelData.csv', 'a') as csvfile:
-    #     fieldnames = ['timestamp', 'label', 'value']
-    #     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        decoded = db.decode_message(msg.arbitration_id, msg.data)
+        # print(decoded)
+        decodedLatAccel = decoded['RCM_lateralAccel'] #*0.101972 #Convert m/s^2 to Gs
+        decodedLongAccel = decoded['RCM_longitudinalAccel'] #*0.101972 #Convert m/s^2 to Gs
 
-        publish_mqtt(client, topic + "/custom_lat-accel",
-                     "{:.1f}".format(decodedLatAccel) + ";#FFFF00")#Yellow
-        #writer.writerow({'timestamp': time.time(), 'label': 'lat-accel', 'value': decodedLatAccel})
+        publish_mqtt(client, topic + "/custom_accel",
+                        "{:.1f}".format(decodedLatAccel) + ";" + "{:.1f}".format(decodedLongAccel) + ";#FFFF00")#Yellow
 
-        publish_mqtt(client, topic + "/custom_lon-accel",
-                 "{:.1f}".format(decodedLongAccel) + ";#FFFF00")
+      #  logMessage("testLog.log", "{lat: " + "{:.1f}".format(decodedLatAccel) + "}, {long: " + "{:.1f}".format(decodedLongAccel) + "}", True)
+
+
+        # publish_mqtt(client, topic + "/custom_lon-accel",
+        #             "{:.1f}".format(decodedLongAccel) + ";#FFFF00")
+
         #writer.writerow({'timestamp': time.time(), 'label': 'lon-accel', 'value': decodedLongAccel})
         # publish_mqtt(client, topic + "/vert_accel",
         #              "{:.1f}".format(decoded['RCM_verticalAccel']))
+    except Exception as ex:
+        template = " RCM Inertial exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+        print (message)
     return
 
 def ESP_status(client, msg):
@@ -260,28 +264,35 @@ def SystemTimeUTC(client, msg):
 def DAS_statusclient(client, msg):
     # BO_ 921 ID399DAS_status: 8 ChassisBus
     localDict = {'LC_HANDS_ON_REQD_DETECTED': 'H_O Reqd', 'LC_HANDS_ON_REQD_NOT_DETECTED': 'H_O Req NotDet', 'UNAVAILABLE': 'Unavail', 'AVAILABLE': 'Avail', 6: 'Engaged'}
-    global ApDisengageCounter, ApEngagedTripStartOdometer, currentOdometer
+    global ApEngaged, ApDisengageCounter
     try:
         decoded = db.decode_message(msg.arbitration_id, msg.data)
         #print(decoded)
         decodedApState = translateResponse(localDict, decoded['DAS_autopilotState'])
+
+        #AP HandState 
         publish_mqtt(client, topic + "/ap-handstate",
                      "{}".format(translateResponse(localDict, decoded['DAS_autopilotHandsOnState'])))
-        if decodedApState == "Unavail":
-            publish_mqtt(client, topic + "/custom_ap-state",
-                         "{}".format(decodedApState) + ";#FF8300") #Orange
-        elif decodedApState == "Engaged":
-            publish_mqtt(client, topic + "/custom_ap-state",
-                         "{}".format(decodedApState) + ";#FFFFFF") #white
 
-        else:
-            publish_mqtt(client, topic + "/custom_ap-state",
-                         "{}".format(decodedApState) + ";#FF8300") #Orange
-        # publish_mqtt(client, topic + "/vert_accel",
-        #              "{:.1f}".format(decoded['RCM_verticalAccel']))
+        if ((ApEngaged) and (decodedApState == "Engaged")):
+            #AP Engaged no change
+            publish_mqtt(client, topic + "/custom_ap-state", "{}".format(decodedApState) + ";#FFFFFF") #white
+        elif ((not ApEngaged) and (decodedApState == "Engaged")):
+            #AP was just engaged set globabl True
+            publish_mqtt(client, topic + "/custom_ap-state", "{}".format(decodedApState) + ";#FFFFFF") #white
+            ApEngaged = True
+        elif ((ApEngaged) and (decodedApState != "Engaged")):
+            #AP Disengaged add to ApDisengageCounter
+            ApDisengageCounter += 1
+            ApEngaged = False
+            publish_mqtt(client, topic + "/custom_ap-state", "{}".format(decodedApState) + ";#FF8300") #Yellow
+
+        #Publish Disengage Count
+        publish_mqtt(client, topic + "/disengage-count", "{}".format(ApDisengageCounter)) #Yellow
+
         return
     except Exception as ex:
-        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        template = "DAS_Status exception of type {0} occurred. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
         print (message)
         return
@@ -309,6 +320,19 @@ def getTimeDelayed(lastTimestamp, delayDesired):
         return True
     else:
         return False
+
+def logMessage(logFilename, message, boolTimestamp):
+    try:
+        f = open(logFilename, "a")
+        if boolTimestamp:
+            f.write("{0} -- {1}\n".format(datetime.now().strftime("%Y-%m-%d %H:%M"), message))
+        else:
+            f.write("{0}\n".format(message))
+        f.close()
+    except Exception as ex:
+        template = "Logger exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+        print (message)
 
 def run():
     client = connect_mqtt()
