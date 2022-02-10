@@ -1,0 +1,585 @@
+<html>
+
+<head>
+  <title>Chucks Tesla Can</title>
+  <!--<link rel="stylesheet" href="css/mat.css"> -->
+  <link rel="icon" type="image/ico" href="/favicon.ico" />
+  <script src="js/paho-mqtt-min.js" type="text/javascript"></script>
+  <script src="js/jquery-3.4.1.min.js" type="text/javascript"></script>
+  <script src="js/d3.v5.min.js" type="text/javascript"></script>
+  <!-- <script src="https://d3js.org/d3.v5.min.js"></script> -->
+
+  <script type="text/javascript" language="javascript">
+  longAccel = 0;
+  display_data = [];
+  long_term_dataset =[];
+
+    function updateDataset(lat,long) {
+      /*Changing value and returing it.*/
+      longAccel = long;
+      display_data.push({ "lat": lat, "long": long}); //Add one record to end of array.
+      display_data.shift();
+      return
+    }
+    function updateAccel() {
+      /*Changing value and returing it.*/
+      long_term_dataset.push({"y":longAccel});
+      return
+    }
+
+  </script>
+  <script type="text/javascript" language="javascript">
+    var mqtt;
+    var reconnectTimeout = 2000;
+    var host = window.location.hostname;
+    var port = 3000;
+    var t_now = 0;
+    var t_prev = 0;
+    var mc = 0;
+    var wdt;
+    var ds_prev = 10;
+    var chg_prev = 2;
+    var chg_state = 0;
+    var timeLag = 10000;
+    var msgBuf = [];
+
+    function showValue(st, payload) {
+      //      console.log("in show ST: " + st + " payload: " + payload);
+      var ssplit = st.split('_');
+      var msgn = ssplit[0];
+      var msgi = ssplit[1];
+      //    console.log("msgn: " + msgn + " msgi: " + msgi + " val " + payload);
+
+      if (msgn == 'custom') { //ui/brick_59 85;2.5 from KORN
+        var msplit = payload.split(';');
+        var payload1 = msplit[0];
+        var payload2 = msplit[1];
+        $('#' + msgi).css('color', payload2);
+
+        if (msgi == "accel") {
+          updateDataset(payload1,payload2)
+          $('#lat-accel').html(payload1);
+          $('#lon-accel').html(payload2);
+        } else {
+          $('#' + msgi).html(payload1); //sets html to value after _
+        }
+      }
+      else {
+        $('#' + st).html(payload);
+      }
+    }
+
+    function onFailure(message) {
+      console.log("Connection Attempt to Host " + host + "Failed");
+      setTimeout(MQTTconnect, reconnectTimeout);
+    }
+
+    function onConnectionLost() {
+      console.log("Connection lost");
+      setTimeout(MQTTconnect, reconnectTimeout);
+    }
+
+    function onMessageArrived(msg) {
+      t_now = new Date().getTime();
+      mc = mc + 1;
+      var tsplit = msg.destinationName.split('/');
+      var sc = tsplit[0]; //channel
+      var st = tsplit[1]; //topic
+      //      console.log("msg: " + msg.destinationName + " sc: " + sc + " st: " + st);
+      //console.log("timeLag 3300-300000:" + timeLag);
+      showValue(st, msg.payloadString);
+
+    } //end onMessageArrived
+
+    function onConnect() {
+      // Once a connection has been made, make a subscription and send a message.
+      console.log("Connected ");
+      mqtt.subscribe("ui/#");
+    }
+
+    function MQTTconnect() {
+      console.log("connecting to " + host + " " + port);
+      mqtt = new Paho.MQTT.Client(host, port, "clientjs" + Math.random());
+      var options = {
+        timeout: 3,
+        keepAliveInterval: 5,
+        reconnect: true,
+        onSuccess: onConnect,
+        onFailure: onFailure,
+      };
+      mqtt.onMessageArrived = onMessageArrived
+
+      mqtt.connect(options); //connect
+    }
+  </script>
+
+  <style type="text/css">
+    .line {
+      fill: none;
+      stroke: #FFFF00;
+      stroke-width: 3;
+    }
+
+    .xaxis .tick {
+      opacity: 0;
+    }
+    .xaxis line {
+      stroke: #FFFF00;
+    }
+    .xaxis path {
+      stroke: #FFFF00;
+    }
+    .xaxis text {
+      fill: #FFFF00;
+    }
+
+    .container-fluid {
+      width: 100%;
+      padding-right: 15px;
+      padding-left: 15px;
+      margin-right: auto;
+      margin-left: auto;
+      background-color: #009933;
+      width: 1500px;
+      height: 830px
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      word-wrap: break-word;
+      background-color: #009933;
+      background-clip: border-box;
+      border: 0px solid rgba(0, 0, 0, .12);
+      border-radius: .125rem;
+      width: 12rem
+    }
+
+    .card-body {
+      flex: 1 1 auto;
+      padding: 0.4rem;
+      font-family: Arial, Helvetica, sans-serif
+    }
+    .accel-card-body {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      word-wrap: break-word;
+      background-color: #009933;
+      background-clip: border-box;
+      border: 0px solid rgba(0, 0, 0, .12);
+      border-radius: .125rem;
+      width: 12rem
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-right: -15px;
+      margin-left: -15px
+    }
+
+    .col-sm {
+      flex-basis: 0;
+      flex-grow: 1;
+      max-width: 100%
+    }
+
+    .mr-1,
+    .mx-1 {
+      margin-right: .25rem !important
+    }
+
+    .mb-2,
+    .my-2 {
+      margin-bottom: .5rem !important
+    }
+
+    .no-gutters {
+      margin-right: 0;
+      margin-left: 0
+    }
+
+    .text-light {
+      color: #FFFF00;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700
+    }
+
+    /* .text-highlight {
+      color: #C70039
+    } */
+
+    .bg-dark {
+      background-color: #009933 !important
+        /* background-color: #009933  */
+    }
+
+    .h-100 {
+      height: 100% !important
+    }
+
+    .text-center {
+      text-align: center !important
+    }
+
+    /* .font-style-hud1 {
+      font-size: 25px;
+      font-family: monospace
+    } */
+
+    /* .font-weight-bold {
+      font-weight: 700 !important
+    } */
+  </style>
+
+</head>
+
+<body class="bg-dark">
+  <!--009933.0B0702-->
+  <script>
+    MQTTconnect();
+  </script>
+
+  <br>
+  <div class="text-light bg-dark text-center">
+    <center>Gear: <span id="gear-posn" style="font-size: 20px;">N/A</span>&nbsp&nbsp<span id="date_time" style="font-size: 20px;">N/A</span> UTC</center>
+  </div>
+  <br>
+  <div class="container-fluid">
+    <div class="row mb-2 no-gutters">  <!--first row -->
+
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+          <div class="card-body" style="font-size: 18px">
+            Speed - mph:
+            <br>
+            <span id="cur-speed" style="font-size: 32px; ">N/A</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm mx-1">
+        <div class="accel-card-body bg-dark h-100">
+          <div class="card-body font-weight-bold">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+          <div class="card-body font-weight-bold" style="font-size: 18px">
+            Acceleration (m/s^2)
+            <br>
+            <span style="float:left; font-size: 20px">&nbsp&nbspLat: </span><span id="lat-accel" style="font-size: 22px;">N/A</span>
+            <br>
+            <span style="float:left; font-size: 20px">&nbsp&nbspLong: </span><span id="lon-accel" style="font-size: 22px;">N/A</span>
+            <!-- <br>
+          <span style="float:left;">&nbsp&nbspVert: </span><span id="vert_accel" style="font-size: 20px; font-family: monospace;">N/A</span> -->
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+          <div class="card-body font-weight-bold" style="font-size: 18px">
+            Rear Torque:
+            <br>
+            <span style="float:left;">&nbspTorq Act: </span> <span id="rear_torq" style="font-size: 20px;">N/A</span>
+            <br>
+            <span style="float:left;">&nbspAxel Speed: </span> <span id="axel_speed" style="font-size: 20px;">N/A</span>
+            <!-- <br>
+          <span style="float:left;">&nbspPedal Posn: </span> <span id="pedal_posn" style="font-size: 20px; font-family: monospace;">N/A</span> -->
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+          <div class="card-body font-weight-bold" style="font-size: 18px">
+            Driver Pedal Usage:
+            <br>
+            <span style="float:left;">&nbspBrake: </span><span id="driver-brake" style="font-size: 20x;">N/A</span>
+            <br>
+            <span style="float:left;">&nbspAccel: </span><span id="accel-posn" style="font-size: 20x;">N/A</span>%
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+          <div class="card-body font-weight-bold" style="font-size: 18px">
+            AutoPilot:
+            <br>
+            <span style="float:left;">&nbspAP State:</span><span id="ap-state" style="font-size: 20px;">N/A</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+          <div class="card-body font-weight-bold" style="font-size: 18px">
+            AP Hands On State:
+            <br>
+            <span style="float:left;"></span><span id="ap-handstate" style="font-size: 20px;">N/A</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="row mb-2 no-gutters"> <!--second row -->
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+        <div class="card-body font-weight-bold">
+          Test Row:
+          <br>
+          <span style="float:left;">&nbspOdometer: </span> <span id="odometer" style="font-size: 20px;">N/A</span>
+          <br>
+        </div>
+      </div>
+      </div>
+
+      <div class="col-sm mx-1">
+        <div class="card text-light bg-dark h-100 text-center">
+        <div class="card-body font-weight-bold">
+          <br>
+          <span style="float:left;">&nbspDisengage: </span> <span id="disengage-count" style="font-size: 20px;">N/A</span>
+          <br>
+        </div>
+      </div>
+      </div>
+    </div>
+    <br>
+    <div class=bg-dark id="fading_tail"></div>
+  </div>
+
+
+</body>
+
+
+<script type="text/javascript" language="javascript">
+  //Long Accel Time Plot
+  //
+  // Example as a starting point then modified to make it dynamic
+  // https://bl.ocks.org/gordlea/27370d1eea8464b04538e6d8ced39e89
+  //https://jsfiddle.net/Mdriver/pyfrg8am/
+
+    //GLOBAL VARIABLES
+  var long_redraw_time_ms = 50; //can be changed
+  //var display_n = 500;  //results in ten seconds of data - adjust to change the linger time
+  var long_term_dataset = d3.range(100).map(function(d) { return {"y": 0} });
+  //var display_data = d3.range(display_n).map(function(d) {return {"lat": 0,"long": 0}}); //start with a full set of empty records
+  //var yScale, xScale, tailRadiusScale, tailFillScale;
+
+  var long_innerWidth = 190;
+  var long_innerHeight = 125;
+
+  var long_margin = {
+      top: 10,
+      right: 10,
+      bottom: 50,
+      left: 20
+    },
+    long_width = long_innerWidth - long_margin.left - long_margin.right // Use the window's width
+    ,
+    long_height = long_innerHeight - long_margin.top - long_margin.bottom; // Use the window's height
+
+  var long_term_n = 1000;
+
+  // The number of datapoints displayed on the chart
+  var n = 100;
+
+  // 5. X scale will use the index of our data
+  var long_xScale = d3.scaleLinear()
+    .domain([0, n]) // input
+    .range([0, long_width]); // output
+
+  // 6. Y scale will use the randomly generate number
+  var long_yScale = d3.scaleLinear()
+    .domain([-2, 2]) // input
+    .range([long_height, 0]); // output
+
+  // 7. d3's line generator
+  var long_line = d3.line()
+    .x(function(d, i) {
+      return long_xScale(i);
+    }) // set the x values for the line generator
+    .y(function(d) {
+      return long_yScale(d.y);
+    }) // set the y values for the line generator
+    .curve(d3.curveMonotoneX) // apply smoothing to the line
+
+  // 1. Add the SVG to the page and employ #2
+  var svg = d3.select(".accel-card-body").append("svg")
+    .attr("id", "long-accel-plot")
+    .attr("width", long_width + long_margin.left + long_margin.right)
+    .attr("height", long_height + long_margin.top + long_margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + long_margin.left + "," + long_margin.top + ")");
+
+  // 3. Call the x axis in a group tag
+  svg.append("g")
+    .attr("class", "xaxis")
+    .attr("transform", "translate(0," + long_height / 2 + ")")
+    .call(d3.axisBottom(long_xScale)); // Create an axis component with d3.axisBottom
+
+    //Title
+    svg.append("text")
+      .attr("x", 0)
+      .attr("y", 10)
+      .attr("text-anchor", "left")
+      .style("font-size", "20px")
+      .style('fill', '#FFFF00')
+      .style('font-family', 'Arial, Helvetica, sans-serif')
+      .style('font-weight', '700')
+      .text("Long Accel Plot");
+
+  // Create Y axis scale
+  // svg.append("g")
+  //   .attr("class", "yaxis")
+  //   .call(d3.axisLeft(yScale)); // Create an axis component with d3.axisLeft
+
+  function draw_line() {
+    // get the data for the segment to be displayed
+    longDataset = long_term_dataset.slice(time_i, time_i + n + 1);
+//console.log(longDataset)
+    //clear the previous line draw on the chart
+    d3.select("#my_path").remove();
+
+    //Append the path, bind the data, and call the line generator
+    svg.append("path")
+      .attr("id", "my_path")
+      .datum(longDataset) // 10. Binds data to the line
+      .attr("class", "line") // Assign a class for styling
+      .attr("d", long_line); // 11. Calls the line generator
+  }
+
+  time_i = 0;
+
+  function redraw1() {
+
+    time_i +=1;
+    updateAccel();
+    //console.log(longAccel)
+    draw_line();
+    setTimeout(redraw1, long_redraw_time_ms);
+  }
+
+redraw1();
+
+</script>
+
+<script>
+  //Assumptions
+  //Data will be pushed to display_data at 50 samples per second.
+
+  //GLOBAL VARIABLES
+  var fading_tail_redraw_time_ms = 100; //can be changed
+  var display_n = 100;  //results in ten seconds of data - adjust to change the linger time
+  var display_data = d3.range(display_n).map(function(d) {return {"lat": 0,"long": 0}}); //start with a full set of empty records
+  var dual_yScale, dual_xScale, tailRadiusScale, tailFillScale;
+
+  //global variables for test data only
+  //var test_data = [], test_data_i = 0;
+
+  //Execute the code
+
+  // Replace the testing functions below with code that pushes a new pair on every 20ms and removes the oldest pair. See TESTING_push_test_data_to_displayset for examples.
+  //TESTING_get_test_data();
+  //TESTING_push_test_data_to_displayset();
+  fading_tail_draw_base();
+  fading_tail_redraw_loop();
+
+
+  function fading_tail_redraw_loop() {
+    fading_tail_redraw();
+    setTimeout(fading_tail_redraw_loop, fading_tail_redraw_time_ms); //do it again in 0.05 seconds
+  }
+
+  function fading_tail_draw_base() {
+    var dual_innerWidth = 150; //adjust to control the display size of the visualisation
+    var dual_innerHeight = 150;
+    var dual_margin = {top: 1, right: 1, bottom: 1, left: 1}
+      , dual_width = dual_innerWidth - dual_margin.left - dual_margin.right
+      , dual_height = dual_innerHeight - dual_margin.top - dual_margin.bottom;
+
+    //Adjust the parameters below to impact the look
+    dual_xScale = d3.scaleLinear().domain([-2,2]).range([0, dual_width]);
+    dual_yScale = d3.scaleLinear().domain([-3, 3]).range([dual_height, 0]);
+    tailFillScale = d3.scaleLinear().domain([0,display_n]).range(["#FFFFFF","#FFFF00"]); //Fade to , Fade From
+   // tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([5,15]);
+    tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([1,5]); //circle size to size, from size
+
+    // Start drawing the base
+    svg2 = d3.select("#fading_tail").append("svg")
+      .attr("id","my_chart2")
+      .attr("width", dual_width + dual_margin.left + dual_margin.right)
+      .attr("height", dual_height + dual_margin.top + dual_margin.bottom)
+      .attr("fill", "#009933")
+      .append("g")
+      .attr("transform", "translate(" + dual_margin.left + "," + dual_margin.top + ")");
+
+    //Draw reference lines
+    svg2.append('rect')
+      .style("stroke", "yellow")
+      .style("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("y1", 0)
+      .attr("width", dual_width)
+      .attr("height", dual_height);
+    svg2.append('line')
+      .style("stroke", "yellow")
+      .style("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("y1", dual_yScale(0))
+      .attr("x2", dual_width)
+      .attr("y2", dual_yScale(0));
+    svg2.append('line')
+      .style("stroke", "yellow")
+      .style("stroke-width", 1)
+      .attr("x1", dual_xScale(0))
+      .attr("y1", 0)
+      .attr("x2", dual_xScale(0))
+      .attr("y2", dual_height);
+  }
+
+  function fading_tail_redraw() {
+    svg2.select("#my_path2").remove();
+    my_path2 = svg2.append("g").attr("id","my_path2")
+    for (var i = 0; i < display_data.length; i++) {
+      if (display_data[i]) { // Ignore record if undefined, sometime a undefined record is added to display_data and it breaks the system
+        if (i == display_data.length-1) {
+          strokewidth = 6;
+          stroke = "red"; }
+        else {
+          strokewidth = 0;
+          stroke = "none"; }
+        my_path2.append("circle")
+        .attr("id","my_path2")
+        .attr("cx", dual_xScale(display_data[i].lat))
+        .attr("cy", dual_yScale(display_data[i].long))
+        .style('r', tailRadiusScale(i))
+        .style('fill', tailFillScale(i))
+        .style("stroke-width", strokewidth)
+        .style("stroke", stroke);
+      }
+    }
+  }
+</script>
+
+</html>
+<!-- These are all the variables that impact the look:
+var fading_tail_redraw_time_ms = 50; //can be changed
+var display_n = 500;  //results in ten seconds of data - adjust to change the linger time
+var innerWidth = 150; //adjust to control the display size of the visualisation
+var innerHeight = 150;
+xScale = d3.scaleLinear().domain([-2,2]).range([0, width]);
+yScale = d3.scaleLinear().domain([-3, 3]).range([height, 0]);
+tailFillScale = d3.scaleLinear().domain([0,display_n]).range(["#000000","#ffffff"]);
+tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([5,15]);
+strokewidth = 3;
+stroke = "yellow"; -->
