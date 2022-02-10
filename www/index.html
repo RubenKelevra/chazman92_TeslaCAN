@@ -12,11 +12,11 @@
   <!-- <script src="https://d3js.org/d3.v5.min.js"></script> -->
 
   <style type="text/css">
-    .line {
+    /* .line {
       fill: none;
       stroke: #FFFF00;
       stroke-width: 3;
-    }
+    } */
 
     .xaxis .tick {
       opacity: 0;
@@ -498,7 +498,10 @@ function long_accel_time_plot_redraw_loop() {
 	  .attr("id", "my_path")
 	  .datum(long_display_data) // 10. Binds data to the line
 	  .attr("class", "line") // Assign a class for styling
-	  .attr("d", long_line); // 11. Calls the line generator
+	  .attr("d", long_line) // 11. Calls the line generator
+    .style("fill", "none")
+    .style("stroke", "#FFFF00")
+    .style("stroke-width", 3);
 
 
 	if (window.performance.now() < pause_time_ms || pause_time_ms == 0)
