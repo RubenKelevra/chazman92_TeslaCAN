@@ -13,16 +13,6 @@
 
   <style type="text/css">
 
-    .xaxis .tick {
-      opacity: 0;
-    }
-    .xaxis line {
-      stroke: #FFFF00;
-    }
-    .xaxis path {
-      stroke: #FFFF00;
-    }
-
     .container-fluid {
       width: 100%;
       padding-right: 15px;
@@ -158,7 +148,7 @@
       <div class="col-sm mx-1">
         <div class="card text-light bg-dark h-100 text-center">
           <div class="card-body font-weight-bold" style="font-size: 18px">
-            Acceleration (m/s^2)
+            Acceleration (g)
             <br>
             <span style="float:left; font-size: 20px">&nbsp&nbspLat: </span><span id="lat-accel" style="font-size: 22px;">N/A</span>
             <br>
@@ -269,6 +259,7 @@ var msgBuf = [];
 // data sets
 var smooth_degree = 15; // set to 0 to disable smoothing, use a value somothing like 5 to 30
 var raw_display_n = 100;
+var g_conversion = 0.101972;
 var raw_display_data = d3.range(raw_display_n).map(function(d) {return {"lat": undefined,"long": undefined}}); //start with a full set of empty records
 var smoothed_display_data = smooth_pair(raw_display_data,smooth_degree); //this is just so we can calulate to shortened length after smoothing
 display_n = smoothed_display_data.length;
@@ -389,7 +380,6 @@ function MQTTconnect() {
   mqtt.connect(options); //connect
 }
 
-
 function TESTING_get_test_data() {
   url = "test_accel_data.json";
   fetch(url)
@@ -421,7 +411,7 @@ function TESTING_push_out_data_to_display_sets() {
 
 function long_accel_time_plot_initialise() {
 	var innerWidth = 190, innerHeight = 125;
-
+  var setting_yscale = 2;
 	var margin = {
 	top: 10, right: 10, bottom: 50, left: 20},
 	width = innerWidth - margin.left - margin.right // Use the window's width
@@ -432,7 +422,7 @@ function long_accel_time_plot_initialise() {
 	.range([0, width]); // output
 
 	var long_yScale = d3.scaleLinear()
-	.domain([-2, 2]) // input
+	.domain([-setting_yscale*g_conversion, setting_yscale*g_conversion]) // input
 	.range([height, 0]); // output
 
 	// d3's line generator
@@ -453,12 +443,22 @@ function long_accel_time_plot_initialise() {
 		.append("g")
 		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-	// 3. Call the x axis in a group tag
-	svg1.append("g")
-		.attr("class", "xaxis")
-		.attr("transform", "translate(0," + height / 2 + ")")
-		//.style('fill', '#FFFFFF')
-		.call(d3.axisBottom(long_xScale)); // Create an axis component with d3.axisBottom
+	// // 3. Call the x axis in a group tag
+	// svg1.append("g")
+	// 	.attr("class", "xaxis")
+	// 	.attr("transform", "translate(0," + height / 2 + ")")
+	// 	.call(d3.axisBottom(long_xScale)); // Create an axis component with d3.axisBottom
+
+    //long-accel time plot x axis
+    svg1.append('line')
+    .attr("transform", "translate(0," + height / 2 + ")")
+    .style("stroke", "yellow")
+    .style("stroke-width", 1)
+    .attr("x1", 0)
+    .attr("y1", 0)
+    .attr("x2", width)
+    .attr("y2", 0);
+
 		//Title
 	svg1.append("text")
 	  .attr("x", 0)
@@ -469,6 +469,7 @@ function long_accel_time_plot_initialise() {
 	  .style('font-family', 'Arial, Helvetica, sans-serif')
 	  .style('font-weight', '700')
 	  .text("Long Accel.");
+
 }
 
 function long_accel_time_plot_redraw_loop() {
@@ -486,6 +487,7 @@ function long_accel_time_plot_redraw_loop() {
 	d3.select("#my_path").remove(); //clear the previous line draw on the chart
 
 	//Append the path, bind the data, and call the line generator
+  //.xaxis stroke settings are in .css at the top of the file
 	svg1.append("path")
 	  .attr("id", "my_path")
 	  .datum(long_display_data) // 10. Binds data to the line
@@ -495,7 +497,6 @@ function long_accel_time_plot_redraw_loop() {
     .style("stroke", "#FFFF00")
     .style("stroke-width", 3);
 
-
 	if (window.performance.now() < pause_time_ms || pause_time_ms == 0)
 		setTimeout(long_accel_time_plot_redraw_loop, long_redraw_time_ms);
 }
@@ -504,14 +505,16 @@ function long_accel_time_plot_redraw_loop() {
 function fading_tail_initialise() {
 	var innerWidth = 150; //adjust to control the display size of the visualisation
 	var innerHeight = 150;
+  var setting_xscale = 3;
+  var setting_yscale = 2;
 	var margin = {top: 1, right: 1, bottom: 1, left: 1}
 	  , width = innerWidth - margin.left - margin.right
 	  , height = innerHeight - margin.top - margin.bottom;
 
 	//Adjust the parameters below to impact the look
-  tail_xScale = d3.scaleLinear().domain([2,-2]).range([0, width]);
+  tail_xScale = d3.scaleLinear().domain([setting_yscale*g_conversion,-setting_yscale*g_conversion]).range([0, width]);
 	// tail_xScale = d3.scaleLinear().domain([-2,2]).range([0, width]);
-	tail_yScale = d3.scaleLinear().domain([-3, 3]).range([height, 0]);
+	tail_yScale = d3.scaleLinear().domain([-setting_xscale*g_conversion, setting_xscale*g_conversion]).range([height, 0]);
   tail_FillScale = d3.scaleLinear().domain([0,display_n]).range(["#FFFFFF","#000000"]); //Fade to , Fade From
   tail_RadiusScale = d3.scaleLinear().domain([0,display_n]).range([1,5]); //circle size to size, from size
 
@@ -523,6 +526,7 @@ function fading_tail_initialise() {
     .attr("fill", "#009933")
 	  .append("g")
 	  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
 
 	//Draw reference lines
     svg2.append('rect')
