@@ -116,12 +116,11 @@ def listenToCan(client):
                         Odometer(client, msg)
                         timestamp_3B6 = time.time()
                 else:
-
                     print("Message {:03X} not handled".format(messageID))
                     pass
             except Exception as ex:
-                template = "Msg: {0:03X} An exception of type {1} occurred. Arguments:\n{2!r}"
-                message = template.format(messageID, type(ex).__name__, ex.args)
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
                 print (message)
     except KeyboardInterrupt:
         # Catch keyboard interrupt
@@ -202,11 +201,11 @@ def RCM_inertial2(client, msg):
 
         decoded = db.decode_message(msg.arbitration_id, msg.data)
         # print(decoded)
-        decodedLatAccel = decoded['RCM_lateralAccel'] #*0.101972 #Convert m/s^2 to Gs
-        decodedLongAccel = decoded['RCM_longitudinalAccel'] #*0.101972 #Convert m/s^2 to Gs
+        decodedLatAccel = decoded['RCM_lateralAccel'] *0.101972 #Convert m/s^2 to Gs
+        decodedLongAccel = decoded['RCM_longitudinalAccel'] *0.101972 #Convert m/s^2 to Gs
 
         publish_mqtt(client, topic + "/custom_accel",
-                        "{:.1f}".format(decodedLatAccel) + ";" + "{:.1f}".format(decodedLongAccel) + ";#FFFF00")#Yellow
+                        "{:.3f}".format(decodedLatAccel) + ";" + "{:.3f}".format(decodedLongAccel) + ";#FFFF00")#Yellow
 
       #  logMessage("testLog.log", "{lat: " + "{:.1f}".format(decodedLatAccel) + "}, {long: " + "{:.1f}".format(decodedLongAccel) + "}", True)
 
