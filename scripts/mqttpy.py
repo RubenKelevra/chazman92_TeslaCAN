@@ -1,3 +1,8 @@
+#TODO
+#Calculate interventions when AP is engaged and accelerator is pressed
+#Find blinker Data to use in interventions
+
+
 # Created by Chuck Cook on Jan 28 2022
 #
 # import os #OS level functions
@@ -29,9 +34,10 @@ timestamp_3B6 = time.time()
 # ApEngagedTripStartOdometer = None
 # #ApTripLength = 0
 ApDisengageCounter = 0
+ApInterveneCounter = 0
 ApEngaged = False
-
-
+DriverAcceleratorPressed = False
+ApInterveneActive = False
 
 # with open('accelData.csv', 'w', newline='') as csvfile:
 #     fieldnames = ['timestamp', 'label', 'value']
@@ -158,8 +164,19 @@ def GPSLatLong(client, msg):
 def DriveSystemStatus(client, msg):
     # BO_ 79 ID04FGPSLatLong: 8 ChassisBus
     localDict = {'DI_GEAR_D': 'D', 'DI_GEAR_P': 'P', 'DI_GEAR_R': 'R','DI_GEAR_SNA': 'SNA'}
+
+    global DriverAcceleratorPressed, ApInterveneActive
     decoded = db.decode_message(msg.arbitration_id, msg.data)
     #print(decoded)
+#print (DriverAcceleratorPressed, ApInterveneActive, decoded['DI_accelPedalPos'])
+    if (decoded['DI_accelPedalPos'] == 0.0):
+        DriverAcceleratorPressed = False
+        if (ApInterveneActive == True):
+            ApInterveneActive = False
+    else:
+        DriverAcceleratorPressed = True
+        
+
     publish_mqtt(client, topic + "/accel-posn",
                  "{:.0f}".format(decoded['DI_accelPedalPos']))
 
@@ -263,18 +280,24 @@ def SystemTimeUTC(client, msg):
 def DAS_statusclient(client, msg):
     # BO_ 921 ID399DAS_status: 8 ChassisBus
     localDict = {'LC_HANDS_ON_REQD_DETECTED': 'H_O Reqd', 'LC_HANDS_ON_REQD_NOT_DETECTED': 'H_O Req NotDet', 'UNAVAILABLE': 'Unavail', 'AVAILABLE': 'Avail', 6: 'Engaged'}
-    global ApEngaged, ApDisengageCounter
+    global ApEngaged, ApDisengageCounter, ApInterveneCounter, DriverAcceleratorPressed, ApInterveneActive
     try:
         decoded = db.decode_message(msg.arbitration_id, msg.data)
         #print(decoded)
+
         decodedApState = translateResponse(localDict, decoded['DAS_autopilotState'])
 
         #AP HandState 
         publish_mqtt(client, topic + "/ap-handstate",
                      "{}".format(translateResponse(localDict, decoded['DAS_autopilotHandsOnState'])))
-
-        if ((ApEngaged) and (decodedApState == "Engaged")):
             #AP Engaged no change
+        print(ApInterveneActive,DriverAcceleratorPressed )
+        if ((ApEngaged) and (decodedApState == "Engaged")):
+            if ((DriverAcceleratorPressed == True) and (ApInterveneActive == False)):
+                ApInterveneCounter += 1
+                ApInterveneActive = True
+                print("AP Intervene Active: ",ApInterveneActive)
+
             publish_mqtt(client, topic + "/custom_ap-state", "{}".format(decodedApState) + ";#FFFFFF") #white
         elif ((not ApEngaged) and (decodedApState == "Engaged")):
             #AP was just engaged set globabl True
@@ -286,9 +309,9 @@ def DAS_statusclient(client, msg):
             ApEngaged = False
             publish_mqtt(client, topic + "/custom_ap-state", "{}".format(decodedApState) + ";#FF8300") #Yellow
 
-        #Publish Disengage Count
-        publish_mqtt(client, topic + "/disengage-count", "{}".format(ApDisengageCounter)) #Yellow
-
+        #Publish Disengage Count and Intervention Count
+        publish_mqtt(client, topic + "/disengage-count", "{}".format(ApDisengageCounter))
+        publish_mqtt(client, topic + "/intervene-count", "{}".format(ApInterveneCounter))
         return
     except Exception as ex:
         template = "DAS_Status exception of type {0} occurred. Arguments:\n{1!r}"
