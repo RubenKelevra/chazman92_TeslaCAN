@@ -342,12 +342,10 @@ function onFailure(message) {
   setTimeout(MQTTconnect, reconnectTimeout);
 }
 
-
 function onConnectionLost() {
   console.log("Connection lost");
   setTimeout(MQTTconnect, reconnectTimeout);
 }
-
 
 function onMessageArrived(msg) {
   t_now = new Date().getTime();
