@@ -4,8 +4,7 @@
 
 
 # Created by Chuck Cook on Jan 28 2022
-#
-# import os #OS level functions
+
 import os
 from paho.mqtt import client as mqtt_client
 import time  # The time library is useful for delays
@@ -39,11 +38,6 @@ ApEngaged = False
 DriverAcceleratorPressed = False
 ApInterveneActive = False
 
-# with open('accelData.csv', 'w', newline='') as csvfile:
-#     fieldnames = ['timestamp', 'label', 'value']
-#     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-#
-#     writer.writeheader()
 
 
 try:
@@ -114,7 +108,9 @@ def listenToCan(client):
                     SystemTimeUTC(client, msg)
 
                 elif messageID == 0x399:
-                    DAS_statusclient(client, msg)
+                    # can1 sending short data, so eliminating those messages
+                    if ((msg.channel == 'vcan0') or (msg.channel == 'can0')):
+                        DAS_statusclient(client, msg)
 
                 elif messageID == 0x3B6:
                     global timestamp_3B6
@@ -220,19 +216,20 @@ def RCM_inertial2(client, msg):
         # print(decoded)
         decodedLatAccel = decoded['RCM_lateralAccel'] *0.101972 #Convert m/s^2 to Gs
         decodedLongAccel = decoded['RCM_longitudinalAccel'] *0.101972 #Convert m/s^2 to Gs
+        decodedVertAccel = decoded['RCM_verticalAccel'] *0.101972 #Convert m/s^2 to Gs
 
-        publish_mqtt(client, topic + "/custom_accel",
-                        "{:.3f}".format(decodedLatAccel) + ";" + "{:.3f}".format(decodedLongAccel) + ";#FFFF00")#Yellow
+        publish_mqtt(client, topic + "/custom_accel", "{:.3f}".format(decodedLatAccel) + ";" + "{:.3f}".format(decodedLongAccel) + ";" + "{:.3f}".format(decodedVertAccel) + ";#FFFF00")#Yellow
 
-      #  logMessage("testLog.log", "{lat: " + "{:.1f}".format(decodedLatAccel) + "}, {long: " + "{:.1f}".format(decodedLongAccel) + "}", True)
+        #publish_mqtt(client, topic + "/vert_accel", "{:.1f}".format(decoded['RCM_verticalAccel']))
 
+        #Log Lat and Long Acceleration data in g's - False is without Timestamp
+        #logMessage("testLog.log", '{"lat": %0.3f}, {"long": %1.3f}, {"vert": %2.3f},' %(decodedLatAccel, decodedLongAccel, decodedVertAccel), False)
 
         # publish_mqtt(client, topic + "/custom_lon-accel",
         #             "{:.1f}".format(decodedLongAccel) + ";#FFFF00")
 
         #writer.writerow({'timestamp': time.time(), 'label': 'lon-accel', 'value': decodedLongAccel})
-        # publish_mqtt(client, topic + "/vert_accel",
-        #              "{:.1f}".format(decoded['RCM_verticalAccel']))
+
     except Exception as ex:
         template = " RCM Inertial exception of type {0} occurred. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
@@ -281,6 +278,7 @@ def DAS_statusclient(client, msg):
     # BO_ 921 ID399DAS_status: 8 ChassisBus
     localDict = {'LC_HANDS_ON_REQD_DETECTED': 'H_O Reqd', 'LC_HANDS_ON_REQD_NOT_DETECTED': 'H_O Req NotDet', 'UNAVAILABLE': 'Unavail', 'AVAILABLE': 'Avail', 6: 'Engaged'}
     global ApEngaged, ApDisengageCounter, ApInterveneCounter, DriverAcceleratorPressed, ApInterveneActive
+    #print(msg)
     try:
         decoded = db.decode_message(msg.arbitration_id, msg.data)
         #print(decoded)
@@ -290,13 +288,11 @@ def DAS_statusclient(client, msg):
         #AP HandState 
         publish_mqtt(client, topic + "/ap-handstate",
                      "{}".format(translateResponse(localDict, decoded['DAS_autopilotHandsOnState'])))
-            #AP Engaged no change
-        print(ApInterveneActive,DriverAcceleratorPressed )
+        #AP Engaged no change
         if ((ApEngaged) and (decodedApState == "Engaged")):
             if ((DriverAcceleratorPressed == True) and (ApInterveneActive == False)):
                 ApInterveneCounter += 1
                 ApInterveneActive = True
-                print("AP Intervene Active: ",ApInterveneActive)
 
             publish_mqtt(client, topic + "/custom_ap-state", "{}".format(decodedApState) + ";#FFFFFF") #white
         elif ((not ApEngaged) and (decodedApState == "Engaged")):

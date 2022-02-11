@@ -165,8 +165,6 @@
       <div class="col-sm mx-1">
         <div class="card text-light bg-dark h-100 text-center">
           <div class="card-body font-weight-bold" style="font-size: 18px">
-            Driver Pedal Usage:
-            <br>
             <span style="float:left;">&nbspBrake: </span><span id="driver-brake" style="font-size: 20x;">N/A</span>
             <br>
             <span style="float:left;">&nbspAccel: </span><span id="accel-posn" style="font-size: 20x;">N/A</span>%
@@ -293,7 +291,8 @@ function similulate_data_feed() {
 }
 
 
-function updateDataset(lat,long) {
+function updateDataset(lat, long, vert) {
+  console.log(lat, long, vert)
 	raw_display_data.push({ "lat": lat, "long": long}); //Add one record to end of array.
 	raw_display_data.shift(); // remove one rcord from start of array
 	smoothed_display_data  = smooth_pair(raw_display_data,smooth_degree);
@@ -314,7 +313,7 @@ function showValue(st, payload) {
 	$('#' + msgi).css('color', payload2);
 
 	if (msgi == "accel") {
-	  updateDataset(payload1,payload2); 
+	  updateDataset(payload1,payload2, msplit[2]); 
 	  $('#lat-accel').html(payload1);
 	  $('#lon-accel').html(payload2);
 	} else {
