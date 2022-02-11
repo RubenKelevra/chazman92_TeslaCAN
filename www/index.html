@@ -243,7 +243,7 @@
     //GLOBAL VARIABLES
 
     //AP Status
-    var ap_engaged = false;
+    var ap_engaged = true;
 
     //MQTT
     var MQTT_enabled = true; //Set this to True for running MQTT CAN Data, False for Testing static json data
@@ -336,10 +336,12 @@
         }
         else if (msgi == "ap-state") {
           if (payload1 == "Engaged") {
-            ap_engaged = true
+            ap_engaged = true;
+            $("#" + msgi).html(payload1); 
           }
           else {
-            ap_engaged = false
+            ap_engaged = false;
+            $("#" + msgi).html(payload1); 
           }
 
         } else { //message custom but not accel
@@ -547,12 +549,12 @@
         .scaleLinear()
         .domain([mysin(setting_yscale_G, "y"), mysin(-setting_yscale_G, "y")])
         .range([height, 0]); // left turns is right on the plot.
-      tail_zScale = d3.scaleLinear().domain([0, 0.4]).range([5, 30]); // draw larger radius circle with +vertical G's
+      tail_zScale = d3.scaleLinear().domain([0, 0.4]).range([10, 30]); // draw larger radius circle with +vertical G's
       tail_FillScale = d3
         .scaleLinear()
         .domain([0, display_n])
         .range(["#FFFFFF", "#000000"]); //Fade to , Fade From
-      tail_RadiusScale = d3.scaleLinear().domain([0, display_n]).range([1, 5]); //circle size to size, from size
+	  tail_RadiusScale = d3.scaleLinear().domain([0,display_n]).range([0.2,1]); //circle size to size, from size
 
       // Start drawing the base
       svg2 = d3
@@ -566,7 +568,7 @@
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
       //Draw reference lines
-      base_colour = "#000000"; // black reference lines
+      base_colour = "#808080"; // black reference lines
 
       svg2
         .append("line")
@@ -605,24 +607,19 @@
         if (fade_display_data[i]) {
           // Ignore record if undefined, sometime a undefined record is added to fade_display_data and it breaks the system
           if (i == fade_display_data.length - 1) {
-            strokewidth = 5;
-            radius = tail_zScale(fade_display_data[i].vert);
-
             if (ap_engaged){
               stroke = "#0033FF"; //G meter circle color
-              fill == "#0033FF";
+              fill = "#0033FF";
             }
             else {
               stroke = "#000000"; //G meter circle color
-              fill == "#000000";
+              fill = "#000000";
             }
-            
           } else {
-            strokewidth = 0;
             stroke = "none";
-            radius = tail_RadiusScale(i);
             fill = tail_FillScale(i)
           }
+          radius = tail_zScale(fade_display_data[i].vert) * tail_RadiusScale(i);	
 
           if (fade_display_data[i].lat && fade_display_data[i].long) {
             //only draw circles if lat and long have values.
@@ -632,9 +629,7 @@
               .attr("cx", tail_xScale(mysin(fade_display_data[i].lat, "x")))
               .attr("cy", tail_yScale(mysin(fade_display_data[i].long, "y")))
               .style("r", radius)
-             // .style("fill", tail_FillScale(i))
               .style('fill', fill)
-              .style("stroke-width", strokewidth)
               .style("stroke", stroke);
           }
         }
