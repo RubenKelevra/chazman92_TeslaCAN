@@ -10,95 +10,98 @@
     <!-- <script src="https://d3js.org/d3.v5.min.js"></script> -->
 
     <style type="text/css">
-      body {
-        background-color: #009933;
-        /* background-color: white; */
-      }
-
       .container-fluid {
-        width: 100%;
-        padding-right: 15px;
-        padding-left: 15px;
-        margin-right: auto;
-        margin-left: auto;
-        width: 1500px;
-        height: 830px;
-      }
+      width: 100%;
+      padding-right: 15px;
+      padding-left: 15px;
+      margin-right: auto;
+      margin-left: auto;
+      background-color: #009933;
+      width: 1500px;
+      height: 830px
+    }
 
-      .card {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        word-wrap: break-word;
-        background-clip: border-box;
-        border: 0px solid rgba(0, 0, 0, 0.12);
-        border-radius: 0.125rem;
-        width: 12rem;
-      }
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      word-wrap: break-word;
+      background-color: #009933;
+      background-clip: border-box;
+      border: 0px solid rgba(0, 0, 0, .12);
+      border-radius: .125rem;
+      width: 12rem
+    }
 
-      .card-body {
-        flex: 1 1 auto;
-        padding: 0.4rem;
-        font-family: Arial, Helvetica, sans-serif;
-      }
-      .accel-card-body {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        word-wrap: break-word;
-        background-clip: border-box;
-        border: 0px solid rgba(0, 0, 0, 0.12);
-        border-radius: 0.125rem;
-        width: 12rem;
-      }
+    .card-body {
+      flex: 1 1 auto;
+      padding: 0.4rem;
+      font-family: Arial, Helvetica, sans-serif
+    }
+    .accel-card-body {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      word-wrap: break-word;
+      background-color: #009933;
+      background-clip: border-box;
+      border: 0px solid rgba(0, 0, 0, .12);
+      border-radius: .125rem;
+      width: 12rem
+    }
 
-      .row {
-        display: flex;
-        flex-wrap: wrap;
-        margin-right: -15px;
-        margin-left: -15px;
-      }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-right: -15px;
+      margin-left: -15px
+    }
 
-      .col-sm {
-        flex-basis: 0;
-        flex-grow: 1;
-        max-width: 100%;
-      }
+    .col-sm {
+      flex-basis: 0;
+      flex-grow: 1;
+      max-width: 100%
+    }
 
-      .mr-1,
-      .mx-1 {
-        margin-right: 0.25rem !important;
-      }
+    .mr-1,
+    .mx-1 {
+      margin-right: .25rem !important
+    }
 
-      .mb-2,
-      .my-2 {
-        margin-bottom: 0.5rem !important;
-      }
+    .mb-2,
+    .my-2 {
+      margin-bottom: .5rem !important
+    }
 
-      .no-gutters {
-        margin-right: 0;
-        margin-left: 0;
-      }
+    .no-gutters {
+      margin-right: 0;
+      margin-left: 0
+    }
 
-      .text-light {
-        color: #ffff00;
-        font-family: Arial, Helvetica, sans-serif;
-        font-weight: 700;
-      }
+    .text-light {
+      color: #FFFF00;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700
+    }
 
-      /* .text-highlight {
+    /* .text-highlight {
       color: #C70039
     } */
 
-      .h-100 {
-        height: 100% !important;
-      }
+    .bg-dark {
+      background-color: #009933 !important
+        /* background-color: #009933  */
+    }
 
-      .text-center {
-        text-align: center !important;
-      }
+    .h-100 {
+      height: 100% !important
+    }
+
+    .text-center {
+      text-align: center !important
+    }
     </style>
   </head>
 
@@ -244,6 +247,7 @@
 
     //AP Status
     var ap_engaged = true;
+    var ap_fill_color = "#000000"; 
 
     //MQTT
     var MQTT_enabled = true; //Set this to True for running MQTT CAN Data, False for Testing static json data
@@ -337,10 +341,12 @@
         else if (msgi == "ap-state") {
           if (payload1 == "Engaged") {
             ap_engaged = true;
+            ap_fill_color = "#0033FF"; 
             $("#" + msgi).html(payload1); 
           }
           else {
             ap_engaged = false;
+            ap_fill_color = "#000000"; 
             $("#" + msgi).html(payload1); 
           }
 
@@ -553,7 +559,7 @@
       tail_FillScale = d3
         .scaleLinear()
         .domain([0, display_n])
-        .range(["#FFFFFF", "#000000"]); //Fade to , Fade From
+        .range(["#FFFFFF", ap_fill_color]); //Fade to , Fade From
 	  tail_RadiusScale = d3.scaleLinear().domain([0,display_n]).range([0.2,1]); //circle size to size, from size
 
       // Start drawing the base
@@ -628,14 +634,8 @@
         if (fade_display_data[i]) {
           // Ignore record if undefined, sometime a undefined record is added to fade_display_data and it breaks the system
           if (i == fade_display_data.length - 1) {
-            if (ap_engaged){
-              stroke = "#0033FF"; //G meter circle color
-              fill = "#0033FF";
-            }
-            else {
-              stroke = "#000000"; //G meter circle color
-              fill = "#000000";
-            }
+            stroke = ap_fill_color; //set by variable in messaage code
+            fill = ap_fill_color; 
           } else {
             stroke = "none";
             fill = tail_FillScale(i)
