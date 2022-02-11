@@ -57,6 +57,7 @@ bus.set_filters([
                  {"can_id":0x108, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x111, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x118, "can_mask": 0xFFFFFFF, "extended": False},
+                 {"can_id":0x129, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x145, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x257, "can_mask": 0xFFFFFFF, "extended": False},
                  {"can_id":0x318, "can_mask": 0xFFFFFFF, "extended": False},
@@ -97,6 +98,9 @@ def listenToCan(client):
 
                 elif messageID == 0x118:
                     DriveSystemStatus(client, msg)
+
+                elif messageID == 0x129:
+                    SteeringAngle(client, msg)
 
                 elif messageID == 0x145:
                     ESP_status(client, msg)
@@ -234,6 +238,16 @@ def RCM_inertial2(client, msg):
         template = " RCM Inertial exception of type {0} occurred. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
         print (message)
+    return
+
+def SteeringAngle(client, msg):
+    #BO_ 297 ID129SteeringAngle: 8 VehicleBus
+    decoded = db.decode_message(msg.arbitration_id, msg.data)
+    #print(decoded)
+
+    decodedSteeringAngle = decoded['SteeringAngle129']
+
+    publish_mqtt(client, topic + "/steering-angle", "{:0.1f}".format(decodedSteeringAngle))
     return
 
 def ESP_status(client, msg):
