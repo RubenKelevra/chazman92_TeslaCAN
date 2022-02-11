@@ -2,136 +2,15 @@
 
 <head>
   <title>Chucks Tesla Can</title>
-  <!--<link rel="stylesheet" href="css/mat.css"> -->
   <link rel="icon" type="image/ico" href="/favicon.ico" />
   <script src="js/paho-mqtt-min.js" type="text/javascript"></script>
   <script src="js/jquery-3.4.1.min.js" type="text/javascript"></script>
   <script src="js/d3.v5.min.js" type="text/javascript"></script>
+  <script src="js/underscore-umd-min.js"></script>
+  
   <!-- <script src="https://d3js.org/d3.v5.min.js"></script> -->
 
-  <script type="text/javascript" language="javascript">
-  longAccel = 0;
-  display_data = [];
-  long_term_dataset =[];
-
-    function updateDataset(lat,long) {
-      /*Changing value and returing it.*/
-      longAccel = long;
-      display_data.push({ "lat": lat, "long": long}); //Add one record to end of array.
-      display_data.shift();
-      return
-    }
-    function updateAccel() {
-      /*Changing value and returing it.*/
-      long_term_dataset.push({"y":longAccel});
-      return
-    }
-
-  </script>
-  <script type="text/javascript" language="javascript">
-    var mqtt;
-    var reconnectTimeout = 2000;
-    var host = window.location.hostname;
-    var port = 3000;
-    var t_now = 0;
-    var t_prev = 0;
-    var mc = 0;
-    var wdt;
-    var ds_prev = 10;
-    var chg_prev = 2;
-    var chg_state = 0;
-    var timeLag = 10000;
-    var msgBuf = [];
-
-    function showValue(st, payload) {
-      //      console.log("in show ST: " + st + " payload: " + payload);
-      var ssplit = st.split('_');
-      var msgn = ssplit[0];
-      var msgi = ssplit[1];
-      //    console.log("msgn: " + msgn + " msgi: " + msgi + " val " + payload);
-
-      if (msgn == 'custom') { //ui/brick_59 85;2.5 from KORN
-        var msplit = payload.split(';');
-        var payload1 = msplit[0];
-        var payload2 = msplit[1];
-        $('#' + msgi).css('color', payload2);
-
-        if (msgi == "accel") {
-          updateDataset(payload1,payload2)
-          $('#lat-accel').html(payload1);
-          $('#lon-accel').html(payload2);
-        } else {
-          $('#' + msgi).html(payload1); //sets html to value after _
-        }
-      }
-      else {
-        $('#' + st).html(payload);
-      }
-    }
-
-    function onFailure(message) {
-      console.log("Connection Attempt to Host " + host + "Failed");
-      setTimeout(MQTTconnect, reconnectTimeout);
-    }
-
-    function onConnectionLost() {
-      console.log("Connection lost");
-      setTimeout(MQTTconnect, reconnectTimeout);
-    }
-
-    function onMessageArrived(msg) {
-      t_now = new Date().getTime();
-      mc = mc + 1;
-      var tsplit = msg.destinationName.split('/');
-      var sc = tsplit[0]; //channel
-      var st = tsplit[1]; //topic
-      //      console.log("msg: " + msg.destinationName + " sc: " + sc + " st: " + st);
-      //console.log("timeLag 3300-300000:" + timeLag);
-      showValue(st, msg.payloadString);
-
-    } //end onMessageArrived
-
-    function onConnect() {
-      // Once a connection has been made, make a subscription and send a message.
-      console.log("Connected ");
-      mqtt.subscribe("ui/#");
-    }
-
-    function MQTTconnect() {
-      console.log("connecting to " + host + " " + port);
-      mqtt = new Paho.MQTT.Client(host, port, "clientjs" + Math.random());
-      var options = {
-        timeout: 3,
-        keepAliveInterval: 5,
-        reconnect: true,
-        onSuccess: onConnect,
-        onFailure: onFailure,
-      };
-      mqtt.onMessageArrived = onMessageArrived
-
-      mqtt.connect(options); //connect
-    }
-  </script>
-
   <style type="text/css">
-    .line {
-      fill: none;
-      stroke: #FFFF00;
-      stroke-width: 3;
-    }
-
-    .xaxis .tick {
-      opacity: 0;
-    }
-    .xaxis line {
-      stroke: #FFFF00;
-    }
-    .xaxis path {
-      stroke: #FFFF00;
-    }
-    .xaxis text {
-      fill: #FFFF00;
-    }
 
     .container-fluid {
       width: 100%;
@@ -226,24 +105,11 @@
       text-align: center !important
     }
 
-    /* .font-style-hud1 {
-      font-size: 25px;
-      font-family: monospace
-    } */
-
-    /* .font-weight-bold {
-      font-weight: 700 !important
-    } */
   </style>
 
 </head>
 
 <body class="bg-dark">
-  <!--009933.0B0702-->
-  <script>
-    MQTTconnect();
-  </script>
-
   <br>
   <div class="text-light bg-dark text-center">
     <center>Gear: <span id="gear-posn" style="font-size: 20px;">N/A</span>&nbsp&nbsp<span id="date_time" style="font-size: 20px;">N/A</span> UTC</center>
@@ -264,15 +130,14 @@
 
       <div class="col-sm mx-1">
         <div class="accel-card-body bg-dark h-100">
-          <div class="card-body font-weight-bold">
-          </div>
+
         </div>
       </div>
 
       <div class="col-sm mx-1">
         <div class="card text-light bg-dark h-100 text-center">
           <div class="card-body font-weight-bold" style="font-size: 18px">
-            Acceleration (m/s^2)
+            Acceleration (g)
             <br>
             <span style="float:left; font-size: 20px">&nbsp&nbspLat: </span><span id="lat-accel" style="font-size: 22px;">N/A</span>
             <br>
@@ -290,7 +155,7 @@
             <br>
             <span style="float:left;">&nbspTorq Act: </span> <span id="rear_torq" style="font-size: 20px;">N/A</span>
             <br>
-            <span style="float:left;">&nbspAxel Speed: </span> <span id="axel_speed" style="font-size: 20px;">N/A</span>
+            <span style="float:left;">&nbspAxle Speed: </span> <span id="axel_speed" style="font-size: 20px;">N/A</span>
             <!-- <br>
           <span style="float:left;">&nbspPedal Posn: </span> <span id="pedal_posn" style="font-size: 20px; font-family: monospace;">N/A</span> -->
           </div>
@@ -300,11 +165,11 @@
       <div class="col-sm mx-1">
         <div class="card text-light bg-dark h-100 text-center">
           <div class="card-body font-weight-bold" style="font-size: 18px">
-            Driver Pedal Usage:
-            <br>
             <span style="float:left;">&nbspBrake: </span><span id="driver-brake" style="font-size: 20x;">N/A</span>
             <br>
             <span style="float:left;">&nbspAccel: </span><span id="accel-posn" style="font-size: 20x;">N/A</span>%
+            <br>
+            <span style="float:left;">&nbspSteer: </span> <span id="steering-angle" style="font-size: 20px;">N/A</span>&#176;
           </div>
         </div>
       </div>
@@ -312,9 +177,10 @@
       <div class="col-sm mx-1">
         <div class="card text-light bg-dark h-100 text-center">
           <div class="card-body font-weight-bold" style="font-size: 18px">
-            AutoPilot:
-            <br>
             <span style="float:left;">&nbspAP State:</span><span id="ap-state" style="font-size: 20px;">N/A</span>
+            <br>
+            <span >&nbspDisengage: </span><span id="disengage-count" style="font-size: 20px;">N/A</span>
+            <span >&nbspIntervene: </span><span id="intervene-count" style="font-size: 20px;">N/A</span>
           </div>
         </div>
       </div>
@@ -332,254 +198,437 @@
     </div>
 
     <div class="row mb-2 no-gutters"> <!--second row -->
-      <div class="col-sm mx-1">
+   
+      <div class="col-sm mx-1">  <!--second row, first column -->
+        <div class="card text-light bg-dark h-100 text-center">
+        <div class="card-body font-weight-bold">
+          <div class=bg-dark id="fading_tail"></div>
+        </div>
+      </div>
+      </div>
+
+      <div class="col-sm mx-1">  <!--second row, second column -->
         <div class="card text-light bg-dark h-100 text-center">
         <div class="card-body font-weight-bold">
           Test Row:
           <br>
           <span style="float:left;">&nbspOdometer: </span> <span id="odometer" style="font-size: 20px;">N/A</span>
+          
+          
           <br>
         </div>
       </div>
       </div>
 
-      <div class="col-sm mx-1">
-        <div class="card text-light bg-dark h-100 text-center">
-        <div class="card-body font-weight-bold">
-          <br>
-          <span style="float:left;">&nbspDisengage: </span> <span id="disengage-count" style="font-size: 20px;">N/A</span>
-          <br>
-        </div>
-      </div>
-      </div>
     </div>
-    <br>
-    <div class=bg-dark id="fading_tail"></div>
-  </div>
-
+    
+  </div> <!--end container -->
 
 </body>
 
 
 <script type="text/javascript" language="javascript">
-  //Long Accel Time Plot
-  //
-  // Example as a starting point then modified to make it dynamic
-  // https://bl.ocks.org/gordlea/27370d1eea8464b04538e6d8ced39e89
-  //https://jsfiddle.net/Mdriver/pyfrg8am/
+//This script was written and modified by Chuck Cook @chazman and Matthew Driver @matthew_driver
+//Thank you Matthew!
+//GLOBAL VARIABLES	
 
-    //GLOBAL VARIABLES
-  var long_redraw_time_ms = 50; //can be changed
-  //var display_n = 500;  //results in ten seconds of data - adjust to change the linger time
-  var long_term_dataset = d3.range(100).map(function(d) { return {"y": 0} });
-  //var display_data = d3.range(display_n).map(function(d) {return {"lat": 0,"long": 0}}); //start with a full set of empty records
-  //var yScale, xScale, tailRadiusScale, tailFillScale;
+//MQTT
+var MQTT_enabled = true;
+var mqtt;
+var reconnectTimeout = 2000;
+var host = window.location.hostname;
+var port = 3000;
+var t_now = 0;
+var t_prev = 0;
+var mc = 0;
+var wdt;
+var ds_prev = 10;
+var chg_prev = 2;
+var chg_state = 0;
+var timeLag = 10000;
+var msgBuf = [];
 
-  var long_innerWidth = 190;
-  var long_innerHeight = 125;
+// data sets
+var g_conversion = 0.101972; //conversion factor from m/s^2 to g's
+var smooth_degree = 10; // set to 0 to disable smoothing, use a value somothing like 5 to 30
+var raw_display_n = 100;
+var raw_display_data = d3.range(raw_display_n).map(function(d) {return {"lat": undefined,"long": undefined}}); //start with a full set of empty records
+var smoothed_display_data = smooth_pair(raw_display_data,smooth_degree); //this is just so we can calulate to shortened length after smoothing
+display_n = smoothed_display_data.length;
 
-  var long_margin = {
-      top: 10,
-      right: 10,
-      bottom: 50,
-      left: 20
-    },
-    long_width = long_innerWidth - long_margin.left - long_margin.right // Use the window's width
-    ,
-    long_height = long_innerHeight - long_margin.top - long_margin.bottom; // Use the window's height
+//test data only (when MQTT is disabled)
+var test_data = [], test_data_i = 0;
+pause_time_ms = 0; //2000; // pause the redrawing. Used for debugging. Set to 0 for no pause.
 
-  var long_term_n = 1000;
+// accel long plot 
+var long_redraw_time_ms = 50;  
+var svg1, long_line;
 
-  // The number of datapoints displayed on the chart
-  var n = 100;
+//fading tail
+var tail_redraw_time_ms = 100; //can be changed 
+var tail_yScale, tail_xScale, tail_RadiusScale, tail_FillScale;
+var svg2;
 
-  // 5. X scale will use the index of our data
-  var long_xScale = d3.scaleLinear()
-    .domain([0, n]) // input
-    .range([0, long_width]); // output
 
-  // 6. Y scale will use the randomly generate number
-  var long_yScale = d3.scaleLinear()
-    .domain([-2, 2]) // input
-    .range([long_height, 0]); // output
 
-  // 7. d3's line generator
-  var long_line = d3.line()
-    .x(function(d, i) {
-      return long_xScale(i);
-    }) // set the x values for the line generator
-    .y(function(d) {
-      return long_yScale(d.y);
-    }) // set the y values for the line generator
-    .curve(d3.curveMonotoneX) // apply smoothing to the line
 
-  // 1. Add the SVG to the page and employ #2
-  var svg = d3.select(".accel-card-body").append("svg")
-    .attr("id", "long-accel-plot")
-    .attr("width", long_width + long_margin.left + long_margin.right)
-    .attr("height", long_height + long_margin.top + long_margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + long_margin.left + "," + long_margin.top + ")");
+//EXECUTE
 
-  // 3. Call the x axis in a group tag
-  svg.append("g")
-    .attr("class", "xaxis")
-    .attr("transform", "translate(0," + long_height / 2 + ")")
-    .call(d3.axisBottom(long_xScale)); // Create an axis component with d3.axisBottom
+if (MQTT_enabled)
+	MQTTconnect();
+else 
+	similulate_data_feed();
 
-    //Title
-    svg.append("text")
-      .attr("x", 0)
-      .attr("y", 10)
-      .attr("text-anchor", "left")
-      .style("font-size", "20px")
-      .style('fill', '#FFFF00')
-      .style('font-family', 'Arial, Helvetica, sans-serif')
-      .style('font-weight', '700')
-      .text("Long Accel Plot");
+long_accel_time_plot_initialise();
+long_accel_time_plot_redraw_loop();
 
-  // Create Y axis scale
-  // svg.append("g")
-  //   .attr("class", "yaxis")
-  //   .call(d3.axisLeft(yScale)); // Create an axis component with d3.axisLeft
+fading_tail_initialise();
+fading_tail_redraw_loop();
 
-  function draw_line() {
-    // get the data for the segment to be displayed
-    longDataset = long_term_dataset.slice(time_i, time_i + n + 1);
-//console.log(longDataset)
-    //clear the previous line draw on the chart
-    d3.select("#my_path").remove();
 
-    //Append the path, bind the data, and call the line generator
-    svg.append("path")
-      .attr("id", "my_path")
-      .datum(longDataset) // 10. Binds data to the line
-      .attr("class", "line") // Assign a class for styling
-      .attr("d", long_line); // 11. Calls the line generator
+// FUNCTIONS
+
+function similulate_data_feed() {
+	TESTING_get_test_data();
+	TESTING_push_out_data_to_display_sets();
+}
+
+
+function updateDataset(lat, long, vert) {
+  console.log(lat, long, vert)
+	raw_display_data.push({ "lat": lat, "long": long}); //Add one record to end of array.
+	raw_display_data.shift(); // remove one rcord from start of array
+	smoothed_display_data  = smooth_pair(raw_display_data,smooth_degree);
+}
+
+
+function showValue(st, payload) {
+  //      console.log("in show ST: " + st + " payload: " + payload);
+  var ssplit = st.split('_');
+  var msgn = ssplit[0];
+  var msgi = ssplit[1];
+  //    console.log("msgn: " + msgn + " msgi: " + msgi + " val " + payload);
+
+  if (msgn == 'custom') { //ui/brick_59 85;2.5 from KORN
+	var msplit = payload.split(';');
+	var payload1 = msplit[0];
+	var payload2 = msplit[1];
+	$('#' + msgi).css('color', payload2);
+
+	if (msgi == "accel") {
+	  updateDataset(payload1,payload2, msplit[2]); 
+	  $('#lat-accel').html(payload1);
+	  $('#lon-accel').html(payload2);
+	} else {
+	  $('#' + msgi).html(payload1); //sets html to value after _
+	}
   }
-
-  time_i = 0;
-
-  function redraw1() {
-
-    time_i +=1;
-    updateAccel();
-    //console.log(longAccel)
-    draw_line();
-    setTimeout(redraw1, long_redraw_time_ms);
+  else {
+	$('#' + st).html(payload);
   }
+}
 
-redraw1();
+function onFailure(message) {
+  console.log("Connection Attempt to Host " + host + "Failed");
+  setTimeout(MQTTconnect, reconnectTimeout);
+}
 
-</script>
-
-<script>
-  //Assumptions
-  //Data will be pushed to display_data at 50 samples per second.
-
-  //GLOBAL VARIABLES
-  var fading_tail_redraw_time_ms = 100; //can be changed
-  var display_n = 100;  //results in ten seconds of data - adjust to change the linger time
-  var display_data = d3.range(display_n).map(function(d) {return {"lat": 0,"long": 0}}); //start with a full set of empty records
-  var dual_yScale, dual_xScale, tailRadiusScale, tailFillScale;
-
-  //global variables for test data only
-  //var test_data = [], test_data_i = 0;
-
-  //Execute the code
-
-  // Replace the testing functions below with code that pushes a new pair on every 20ms and removes the oldest pair. See TESTING_push_test_data_to_displayset for examples.
-  //TESTING_get_test_data();
-  //TESTING_push_test_data_to_displayset();
-  fading_tail_draw_base();
-  fading_tail_redraw_loop();
+function onConnectionLost() {
+  console.log("Connection lost");
+  setTimeout(MQTTconnect, reconnectTimeout);
+}
 
 
-  function fading_tail_redraw_loop() {
-    fading_tail_redraw();
-    setTimeout(fading_tail_redraw_loop, fading_tail_redraw_time_ms); //do it again in 0.05 seconds
-  }
+function onMessageArrived(msg) {
+  t_now = new Date().getTime();
+  mc = mc + 1;
+  var tsplit = msg.destinationName.split('/');
+  var sc = tsplit[0]; //channel
+  var st = tsplit[1]; //topic
+  //      console.log("msg: " + msg.destinationName + " sc: " + sc + " st: " + st);
+  //console.log("timeLag 3300-300000:" + timeLag);
+  showValue(st, msg.payloadString);
+} //end onMessageArrived
 
-  function fading_tail_draw_base() {
-    var dual_innerWidth = 150; //adjust to control the display size of the visualisation
-    var dual_innerHeight = 150;
-    var dual_margin = {top: 1, right: 1, bottom: 1, left: 1}
-      , dual_width = dual_innerWidth - dual_margin.left - dual_margin.right
-      , dual_height = dual_innerHeight - dual_margin.top - dual_margin.bottom;
+function onConnect() {
+  // Once a connection has been made, make a subscription and send a message.
+  console.log("Connected ");
+  mqtt.subscribe("ui/#");
+}
 
-    //Adjust the parameters below to impact the look
-    dual_xScale = d3.scaleLinear().domain([-2,2]).range([0, dual_width]);
-    dual_yScale = d3.scaleLinear().domain([-3, 3]).range([dual_height, 0]);
-    tailFillScale = d3.scaleLinear().domain([0,display_n]).range(["#FFFFFF","#FFFF00"]); //Fade to , Fade From
-   // tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([5,15]);
-    tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([1,5]); //circle size to size, from size
+function MQTTconnect() {
+  console.log("connecting to " + host + " " + port);
+  mqtt = new Paho.MQTT.Client(host, port, "clientjs" + Math.random());
+  var options = {
+	timeout: 3,
+	keepAliveInterval: 5,
+	reconnect: true,
+	onSuccess: onConnect,
+	onFailure: onFailure,
+  };
+  mqtt.onMessageArrived = onMessageArrived
 
-    // Start drawing the base
-    svg2 = d3.select("#fading_tail").append("svg")
-      .attr("id","my_chart2")
-      .attr("width", dual_width + dual_margin.left + dual_margin.right)
-      .attr("height", dual_height + dual_margin.top + dual_margin.bottom)
-      .attr("fill", "#009933")
-      .append("g")
-      .attr("transform", "translate(" + dual_margin.left + "," + dual_margin.top + ")");
+  mqtt.connect(options); //connect
+}
 
-    //Draw reference lines
+function TESTING_get_test_data() {
+  url = "test_accel_data.json";
+  fetch(url)
+    .then(response => {
+      if (response.ok) {
+        response.json().then(data => {
+        test_data = data;
+        });
+      } else console.log('Could not fetch url.');
+    })
+    .catch(error => console.log('Fetch error: ' + error));
+}
+
+function TESTING_push_out_data_to_display_sets() {
+	if (test_data.length > 0) { //check to see if the test_data has arrived yet.
+	
+		raw_display_data.push(test_data[test_data_i]); //Add one record to end of array.
+		raw_display_data.shift();	//Remove one record from start of a array
+		smoothed_display_data  = smooth_pair(raw_display_data,smooth_degree);
+		
+		test_data_i++;	//Keep track of the last test record added to the fade_display_data array.
+		if (test_data_i > test_data.length) {
+		  test_data_i = 0;
+		}
+	}
+	if (window.performance.now() < pause_time_ms || pause_time_ms == 0)
+		setTimeout(TESTING_push_out_data_to_display_sets, 20); //do it again in 20ms
+}
+
+function long_accel_time_plot_initialise() {
+	var innerWidth = 190, innerHeight = 125;
+  var setting_yscale = 2; //long-accel time plot vertical scale in m/s^s
+	var margin = {
+	top: 10, right: 10, bottom: 50, left: 20},
+	width = innerWidth - margin.left - margin.right // Use the window's width
+	,height = innerHeight - margin.top - margin.bottom; // Use the window's height
+
+	var long_xScale = d3.scaleLinear()
+	.domain([0, display_n-1]) // input
+	.range([0, width]); // output
+
+	var long_yScale = d3.scaleLinear()
+	.domain([-setting_yscale*g_conversion, setting_yscale*g_conversion]) // input
+	.range([height, 0]); // output
+
+	// d3's line generator
+	long_line = d3.line()
+	.x(function(d, i) {
+	  return long_xScale(i);
+	}) // set the x values for the line generator
+	.y(function(d) {
+	  return long_yScale(d.y);
+	}) // set the y values for the line generator
+	.curve(d3.curveMonotoneX) // apply smoothing to the line
+
+	// 1. Add the SVG to the page and employ #2
+	svg1 = d3.select(".accel-card-body").append("svg")
+		.attr("id", "long-accel-plot")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	// // 3. Call the x axis in a group tag
+	// svg1.append("g")
+	// 	.attr("class", "xaxis")
+	// 	.attr("transform", "translate(0," + height / 2 + ")")
+	// 	.call(d3.axisBottom(long_xScale)); // Create an axis component with d3.axisBottom
+
+    //long-accel time plot x axis
+    svg1.append('line')
+    .attr("transform", "translate(0," + height / 2 + ")")
+    .style("stroke", "yellow")
+    .style("stroke-width", 1)
+    .attr("x1", 0)
+    .attr("y1", 0)
+    .attr("x2", width)
+    .attr("y2", 0);
+
+		//Title
+	svg1.append("text")
+	  .attr("x", 0)
+	  .attr("y", 10)
+	  .attr("text-anchor", "left")
+	  .style("font-size", "20px")
+	  .style('fill', '#FFFF00')
+	  .style('font-family', 'Arial, Helvetica, sans-serif')
+	  .style('font-weight', '700')
+	  .text("Long Accel.");
+
+}
+
+function long_accel_time_plot_redraw_loop() {
+
+	// copy data from smoothed_display_data
+	long_display_data = []
+	for (const row of smoothed_display_data) {
+		if (row.long)
+			long = row.long
+		else
+			long = 0;
+		long_display_data.push({ "y": long});
+	}
+	
+	d3.select("#my_path").remove(); //clear the previous line draw on the chart
+
+	//Append the path, bind the data, and call the line generator
+  //.xaxis stroke settings are in .css at the top of the file
+	svg1.append("path")
+	  .attr("id", "my_path")
+	  .datum(long_display_data) // 10. Binds data to the line
+	  .attr("class", "line") // Assign a class for styling
+	  .attr("d", long_line) // 11. Calls the line generator
+    .style("fill", "none")
+    .style("stroke", "#FFFF00")
+    .style("stroke-width", 3);
+
+	if (window.performance.now() < pause_time_ms || pause_time_ms == 0)
+		setTimeout(long_accel_time_plot_redraw_loop, long_redraw_time_ms);
+}
+
+
+function fading_tail_initialise() {
+	var innerWidth = 150; //adjust to control the display size of the visualisation
+	var innerHeight = 150;
+  var setting_xscale = 3;//dual axis-accel plot horizontal scale in m/s^s
+  var setting_yscale = 2;//dual axis-accel plot vertical scale in m/s^s
+	var margin = {top: 1, right: 1, bottom: 1, left: 1}
+	  , width = innerWidth - margin.left - margin.right
+	  , height = innerHeight - margin.top - margin.bottom;
+
+	//Adjust the parameters below to impact the look
+  tail_xScale = d3.scaleLinear().domain([-setting_yscale*g_conversion,setting_yscale*g_conversion]).range([0, width]);
+	// tail_xScale = d3.scaleLinear().domain([-2,2]).range([0, width]);
+	tail_yScale = d3.scaleLinear().domain([setting_xscale*g_conversion, -setting_xscale*g_conversion]).range([height, 0]);
+  tail_FillScale = d3.scaleLinear().domain([0,display_n]).range(["#FFFFFF","#000000"]); //Fade to , Fade From
+  tail_RadiusScale = d3.scaleLinear().domain([0,display_n]).range([1,5]); //circle size to size, from size
+
+	// Start drawing the base
+	svg2 = d3.select("#fading_tail").append("svg")
+	  .attr("id","my_chart2")
+	  .attr("width", width + margin.left + margin.right)
+	  .attr("height", height + margin.top + margin.bottom)
+    .attr("fill", "#009933")
+	  .append("g")
+	  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+	//Draw reference lines
     svg2.append('rect')
-      .style("stroke", "yellow")
-      .style("stroke-width", 1)
+      .style("stroke", "black")
+      .style("stroke-width", 2)
       .attr("x1", 0)
       .attr("y1", 0)
-      .attr("width", dual_width)
-      .attr("height", dual_height);
+      .attr("width", width)
+      .attr("height", height);
     svg2.append('line')
-      .style("stroke", "yellow")
-      .style("stroke-width", 1)
+      .style("stroke", "black")
+      .style("stroke-width", 2)
       .attr("x1", 0)
-      .attr("y1", dual_yScale(0))
-      .attr("x2", dual_width)
-      .attr("y2", dual_yScale(0));
+      .attr("y1", tail_yScale(0))
+      .attr("x2", width)
+      .attr("y2", tail_yScale(0));
     svg2.append('line')
-      .style("stroke", "yellow")
-      .style("stroke-width", 1)
-      .attr("x1", dual_xScale(0))
+      .style("stroke", "black")
+      .style("stroke-width", 2)
+      .attr("x1", tail_xScale(0))
       .attr("y1", 0)
-      .attr("x2", dual_xScale(0))
-      .attr("y2", dual_height);
-  }
+      .attr("x2", tail_xScale(0))
+      .attr("y2", height);	
+	  
+}
 
-  function fading_tail_redraw() {
-    svg2.select("#my_path2").remove();
-    my_path2 = svg2.append("g").attr("id","my_path2")
-    for (var i = 0; i < display_data.length; i++) {
-      if (display_data[i]) { // Ignore record if undefined, sometime a undefined record is added to display_data and it breaks the system
-        if (i == display_data.length-1) {
+
+function fading_tail_redraw_loop() {
+
+	var fade_display_data = smoothed_display_data;
+
+	svg2.select("#my_path2").remove();
+	my_path2 = svg2.append("g").attr("id","my_path2")
+	for (var i = 0; i < fade_display_data.length; i++) {
+	  if (fade_display_data[i]) { // Ignore record if undefined, sometime a undefined record is added to fade_display_data and it breaks the system  
+		if (i == fade_display_data.length-1) {
           strokewidth = 6;
           stroke = "red"; }
-        else {
-          strokewidth = 0;
-          stroke = "none"; }
-        my_path2.append("circle")
-        .attr("id","my_path2")
-        .attr("cx", dual_xScale(display_data[i].lat))
-        .attr("cy", dual_yScale(display_data[i].long))
-        .style('r', tailRadiusScale(i))
-        .style('fill', tailFillScale(i))
-        .style("stroke-width", strokewidth)
-        .style("stroke", stroke);
-      }
+		else {
+		  strokewidth = 0;
+		  stroke = "none"; }
+		  
+		if (fade_display_data[i].lat && fade_display_data[i].long) { //only draw circles if lat and long have values.
+			my_path2.append("circle")
+			.attr("id","my_path2")
+			.attr("cx", tail_xScale(fade_display_data[i].lat))
+			.attr("cy", tail_yScale(fade_display_data[i].long))	 
+			.style('r', tail_RadiusScale(i))
+			.style('fill', tail_FillScale(i))
+			.style("stroke-width", strokewidth)
+			.style("stroke", stroke);
+			}
+	  }
+	}
+
+	if (window.performance.now() < pause_time_ms || pause_time_ms == 0)
+		setTimeout(fading_tail_redraw_loop, tail_redraw_time_ms); //do it again in 0.05 seconds
+}
+
+
+function smooth(list, degree) {
+	// Source: https://gist.github.com/bycoffe/1207194
+	// Adapted from http://www.swharden.com/blog/2008-11-17-linear-data-smoothing-in-python/
+    var win = degree*2-1;
+    weight = _.range(0, win).map(function (x) { return 1.0; });
+    weightGauss = [];
+    for (i in _.range(0, win)) {
+        i = i-degree+1;
+        frac = i/win;
+        gauss = 1 / Math.exp((4*(frac))*(4*(frac)));
+        weightGauss.push(gauss);
     }
-  }
+    weight = _(weightGauss).zip(weight).map(function (x) { return x[0]*x[1]; });
+    smoothed = _.range(0, (list.length+1)-win).map(function (x) { return 0.0; });
+    for (i=0; i < smoothed.length; i++) {
+        smoothed[i] = _(list.slice(i, i+win)).zip(weight).map(function (x) { return x[0]*x[1]; }).reduce(function (memo, num){ return memo + num; }, 0) / _(weight).reduce(function (memo, num){ return memo + num; }, 0);
+    }
+    return smoothed;
+}
+
+function smooth_pair(latlong_list, degree) {
+
+	if (degree==0) // don't smooth
+		return latlong_list; //return raw data
+
+	var lat_list = [];
+	var long_list = [];
+	
+	for (const row of latlong_list) {
+		try {
+			lat_list.push(row.lat);
+			long_list.push(row.long);
+		}
+		catch(err) {
+			// do nothing
+		}
+	}
+	var smooth_lat_list = smooth(lat_list,degree);
+	var smooth_long_list = smooth(long_list,degree);
+	var smoothed_acc_list = [];
+	i = 0;
+	for (const value of smooth_lat_list) {
+		var smooth_acc_list = [];
+		smoothed_acc_list.push({"lat": smooth_lat_list[i], "long": smooth_long_list[i] }); 
+		i++;
+	}	
+	return smoothed_acc_list;
+}
+
+
 </script>
 
+
 </html>
-<!-- These are all the variables that impact the look:
-var fading_tail_redraw_time_ms = 50; //can be changed
-var display_n = 500;  //results in ten seconds of data - adjust to change the linger time
-var innerWidth = 150; //adjust to control the display size of the visualisation
-var innerHeight = 150;
-xScale = d3.scaleLinear().domain([-2,2]).range([0, width]);
-yScale = d3.scaleLinear().domain([-3, 3]).range([height, 0]);
-tailFillScale = d3.scaleLinear().domain([0,display_n]).range(["#000000","#ffffff"]);
-tailRadiusScale = d3.scaleLinear().domain([0,display_n]).range([5,15]);
-strokewidth = 3;
-stroke = "yellow"; -->

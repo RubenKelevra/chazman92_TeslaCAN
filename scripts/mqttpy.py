@@ -177,7 +177,7 @@ def DriveSystemStatus(client, msg):
         DriverAcceleratorPressed = True
         
 
-    publish_mqtt(client, topic + "/accel-posn",
+    publish_mqtt(client, topic + "/accel-pedal-posn",
                  "{:.0f}".format(decoded['DI_accelPedalPos']))
 
     publish_mqtt(client, topic + "/gear-posn",
