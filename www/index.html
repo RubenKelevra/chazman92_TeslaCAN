@@ -607,17 +607,21 @@
           if (i == fade_display_data.length - 1) {
             strokewidth = 5;
             radius = tail_zScale(fade_display_data[i].vert);
+
             if (ap_engaged){
               stroke = "#0033FF"; //G meter circle color
+              fill == "#0033FF";
             }
             else {
               stroke = "#000000"; //G meter circle color
+              fill == "#000000";
             }
             
           } else {
             strokewidth = 0;
             stroke = "none";
             radius = tail_RadiusScale(i);
+            fill = tail_FillScale(i)
           }
 
           if (fade_display_data[i].lat && fade_display_data[i].long) {
@@ -628,7 +632,8 @@
               .attr("cx", tail_xScale(mysin(fade_display_data[i].lat, "x")))
               .attr("cy", tail_yScale(mysin(fade_display_data[i].long, "y")))
               .style("r", radius)
-              .style("fill", tail_FillScale(i))
+             // .style("fill", tail_FillScale(i))
+              .style('fill', fill)
               .style("stroke-width", strokewidth)
               .style("stroke", stroke);
           }
