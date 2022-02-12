@@ -7,8 +7,6 @@
     <script src="js/d3.v5.min.js" type="text/javascript"></script>
     <script src="js/underscore-umd-min.js"></script>
 
-    <!-- <script src="https://d3js.org/d3.v5.min.js"></script> -->
-
     <style type="text/css">
       .container-fluid {
       width: 100%;
@@ -86,13 +84,8 @@
       font-weight: 700
     }
 
-    /* .text-highlight {
-      color: #C70039
-    } */
-
     .bg-dark {
       background-color: #009933 !important
-        /* background-color: #009933  */
     }
 
     .h-100 {
@@ -246,8 +239,7 @@
     //GLOBAL VARIABLES
 
     //AP Status
-    var ap_engaged = true;
-    var ap_fill_color = "#000000"; 
+    var ap_engaged = false;
 
     //MQTT
     var MQTT_enabled = true; //Set this to True for running MQTT CAN Data, False for Testing static json data
@@ -286,12 +278,17 @@
 
     //fading tail
     var tail_redraw_time_ms = 100; //can be changed
-    var tail_zScale, tail_yScale, tail_zScale, tail_RadiusScale, tail_FillScale;
+    var tail_zScale, tail_yScale, tail_zScale, tail_RadiusScale, tail_FillScale,tail_FillScaleAPengaged;
     var svg2;
 
     var setting_xscale_G = 0.8; //dual axis-accel plot horizontal scale in G's
     var setting_yscale_G = 0.8; //dual axis-accel plot vertical scale in G's
     var Gycap = setting_yscale_G, Gxcap = setting_xscale_G;
+
+    var tail_fill_color_dark_ap_engaged = "#0033FF"; 
+    var tail_fill_color_light_ap_engaged = "#d2dbff";  
+    var tail_fill_color_dark = "#000000"; 
+    var tail_fill_color_light = "#dedede";  
 
     //EXECUTE
 
@@ -341,12 +338,10 @@
         else if (msgi == "ap-state") {
           if (payload1 == "Engaged") {
             ap_engaged = true;
-            ap_fill_color = "#0033FF"; 
             $("#" + msgi).html(payload1); 
           }
           else {
             ap_engaged = false;
-            ap_fill_color = "#000000"; 
             $("#" + msgi).html(payload1); 
           }
 
@@ -402,7 +397,7 @@
 
     function TESTING_get_test_data() {
       url = "test_accel_data.json";
-      //url = "test_accel_data_short.json";
+      url = "test_accel_data_short.json";
       fetch(url)
         .then((response) => {
           if (response.ok) {
@@ -474,13 +469,6 @@
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      // // 3. Call the x axis in a group tag
-      // svg1.append("g")
-      // 	.attr("class", "xaxis")
-      // 	.attr("transform", "translate(0," + height / 2 + ")")
-      // 	.call(d3.axisBottom(long_xScale)); // Create an axis component with d3.axisBottom
-
-      //long-accel time plot x axis
       svg1
         .append("line")
         .attr("transform", "translate(0," + height / 2 + ")")
@@ -512,13 +500,6 @@
       // copy data from smoothed_display_data
       long_display_data = [];
       for (const row of smoothed_display_data) {
-        /*
-		if (row.long)
-			long = mysin(row.long,"y");
-		else
-			long = 0;
-		long_display_data.push({ "y": long});
-			*/
         long_display_data.push({ y: empty_to_zero(mysin(row.long, "y")) });
       }
 
@@ -556,10 +537,18 @@
         .domain([mysin(setting_yscale_G, "y"), mysin(-setting_yscale_G, "y")])
         .range([height, 0]); // left turns is right on the plot.
       tail_zScale = d3.scaleLinear().domain([0, 0.4]).range([10, 30]); // draw larger radius circle with +vertical G's
+	  
       tail_FillScale = d3
         .scaleLinear()
         .domain([0, display_n])
-        .range(["#FFFFFF", ap_fill_color]); //Fade to , Fade From
+        .range([tail_fill_color_light, tail_fill_color_dark]); //Fade to , Fade From
+		
+      tail_FillScaleAPengaged = d3
+        .scaleLinear()
+        .domain([0, display_n])
+        .range([tail_fill_color_light_ap_engaged, tail_fill_color_dark_ap_engaged]); //Fade to , Fade From
+		
+		
 	  tail_RadiusScale = d3.scaleLinear().domain([0,display_n]).range([0.2,1]); //circle size to size, from size
 
       // Start drawing the base
@@ -575,29 +564,48 @@
 
       //Draw reference lines
       base_colour = "#808080"; // black reference lines
-
+	  base_strokewidth = 1.5;
+	  // draw reference circles at 0.2, 0.4, 0.6,, 0.8G
+      for (let G = 0.8; G >= 0.2; G -= 0.2) {
+		if (G==0.8) {
+			colour = "black";
+			fill = "white"; }
+		else {
+			fill = "none";
+			colour = base_colour; }
+        svg2
+          .append("circle")
+          .attr("cx", width / 2)
+          .attr("cy", height / 2)
+          .style("r", tail_yScale(mysin(G, "y")) / 2)
+          .style("fill", fill)
+          .style("stroke-width", base_strokewidth)
+          .style("stroke", colour);
+      }
+	  
+	  // draw cross-hair lines
       svg2
         .append("line")
         .style("stroke", base_colour)
-        .style("stroke-width", 1)
+        .style("stroke-width", base_strokewidth)
         .attr("x1", 0)
         .attr("y1", tail_yScale(0))
         .attr("x2", (width-tail_yScale(mysin(0.2, "y")))/2)
-        .attr("y2", tail_yScale(0));
-
+        .attr("y2", tail_yScale(0));		
+		
       svg2
         .append("line")
         .style("stroke", base_colour)
-        .style("stroke-width", 1)
+        .style("stroke-width", base_strokewidth)
         .attr("x2", width)
         .attr("y1", tail_yScale(0))
         .attr("x1", (width+tail_yScale(mysin(0.2, "y")))/2)
-        .attr("y2", tail_yScale(0));
-
+        .attr("y2", tail_yScale(0));		
+		
       svg2
         .append("line")
         .style("stroke", base_colour)
-        .style("stroke-width", 1)
+        .style("stroke-width", base_strokewidth)
         .attr("x1", tail_xScale(0))
         .attr("y1", 0)
         .attr("x2", tail_xScale(0))
@@ -606,23 +614,11 @@
       svg2
         .append("line")
         .style("stroke", base_colour)
-        .style("stroke-width", 1)
+        .style("stroke-width", base_strokewidth)
         .attr("x1", tail_xScale(0))
         .attr("y2", height)
         .attr("x2", tail_xScale(0))
         .attr("y1", (height+tail_yScale(mysin(0.2, "y")))/2)
-        for (let iG = 0.2; iG < 0.9; iG += 0.2) {
-          if (iG == 0.8)
-            base_colour = "black";
-          svg2
-            .append("circle")
-            .attr("cx", width / 2)
-            .attr("cy", height / 2)
-            .style("r", tail_yScale(mysin(iG, "y")) / 2)
-            .style("fill", "none")
-            .style("stroke-width", 1)
-            .style("stroke", base_colour);
-        }
     }
 
     function fading_tail_redraw_loop() {
@@ -633,14 +629,24 @@
       for (var i = 0; i < fade_display_data.length; i++) {
         if (fade_display_data[i]) {
           // Ignore record if undefined, sometime a undefined record is added to fade_display_data and it breaks the system
+		  
+		  
           if (i == fade_display_data.length - 1) {
-            stroke = ap_fill_color; //set by variable in messaage code
-            fill = ap_fill_color; 
+			strokewidth = 1;
+			stroke = "white";
           } else {
-            stroke = "none";
-            fill = tail_FillScale(i)
+			strokewidth = 0;
+			stroke = "none";
           }
+		  fill = tail_FillScale(i)
           radius = tail_zScale(fade_display_data[i].vert) * tail_RadiusScale(i);	
+		  
+
+          if (ap_engaged) 
+            fill = tail_FillScaleAPengaged(i);
+          else 
+            fill = tail_FillScale(i);
+          	
 
           if (fade_display_data[i].lat && fade_display_data[i].long) {
             //only draw circles if lat and long have values.
@@ -649,9 +655,10 @@
               .attr("id", "my_path2")
               .attr("cx", tail_xScale(mysin(fade_display_data[i].lat, "x")))
               .attr("cy", tail_yScale(mysin(fade_display_data[i].long, "y")))
-              .style("r", radius)
+              .style("r", tail_zScale(fade_display_data[i].vert) * tail_RadiusScale(i))
+              .style('stroke', stroke)
+              .style('strokewidth', strokewidth)
               .style('fill', fill)
-              .style("stroke", stroke);
           }
         }
       }
