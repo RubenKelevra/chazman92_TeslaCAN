@@ -83,7 +83,7 @@ def listenToCan(client):
     try:
         while True:
             msg = canReader.get_message()
-
+            #print(msg)
             try:
                 messageID = msg.arbitration_id
                 # elif messageID == 0x04F:
