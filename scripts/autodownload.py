@@ -8,7 +8,6 @@ import datetime
 import time
 
 import sys
-import struct
 import os.path
 
 def convertRawtoASC(inputFilename, outputFilename):
@@ -187,8 +186,6 @@ while True:
             #ConvertASC
             try:
                 print ("Converting file ...")
-                print(autoDownloadFilename)
-                print(convertedFilename)
                 convertRawtoASC(autoDownloadFilename, convertedFilename)
                 print ("File Converted ...")
 
@@ -206,4 +203,3 @@ while True:
         pass
 
     time.sleep(sleepTime)
-
