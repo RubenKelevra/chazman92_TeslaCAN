@@ -1,0 +1,34 @@
+The first line is the can message ID, name and bitlength. 883 decimal is message ID 0x373 in hex, length is 8 bytes.
+Then follows each of the signals in the message... name, start bit location, bit length, data format and scaling...
+
+BO_ 883 ID3373EPAS3P_sysStatus: 8 ETH
+ SG_ EPAS3P_currentTuneMode : 5|3@1+ (1,0) [0|7] "" ETH
+ SG_ EPAS3P_eacErrorCode : 20|4@1+ (1,0) [0|15] "" ETH
+ SG_ EPAS3P_eacStatus : 53|3@1+ (1,0) [0|7] "" ETH
+ SG_ EPAS3P_handsOnLevel : 38|2@1+ (1,0) [0|3] "" ETH
+ SG_ EPAS3P_internalSAS : 37|14@0+ (0.1,-819.2) [-819.2|819.1] "deg" ETH
+ SG_ EPAS3P_internalSASQF : 4|1@1+ (1,0) [0|1] "" ETH
+ SG_ EPAS3P_steeringFault : 2|1@1+ (1,0) [0|1] "" ETH
+ SG_ EPAS3P_steeringRackForce : 1|10@0+ (50,-25575) [-25575|25575] "N" ETH
+ SG_ EPAS3P_steeringReduced : 3|1@1+ (1,0) [0|1] "" ETH
+ SG_ EPAS3P_sysStatusChecksum : 56|8@1+ (1,0) [0|255] "" ETH
+ SG_ EPAS3P_sysStatusCounter : 48|4@1+ (1,0) [0|15] "" ETH
+ SG_ EPAS3P_torsionBarTorque : 19|12@0+ (0.01,-20.5) [-20.5|20.45] "Nm" ETH
+
+No doubt the torque requirements are in autopilot code within the computer and not something transmitted on can, but if you log this message you can at least see the torques on the rack that it is listening to.
+
+There is another message from the redundant controller...which made news last week when discovered tesla removed the redundant steering controller possibly to save on chips:
+
+BO_ 882 ID372EPAS3S_sysStatus: 8 ETH
+ SG_ EPAS3S_currentTuneMode : 5|3@1+ (1,0) [0|7] "" ETH
+ SG_ EPAS3S_eacErrorCode : 20|4@1+ (1,0) [0|15] "" ETH
+ SG_ EPAS3S_eacStatus : 53|3@1+ (1,0) [0|7] "" ETH
+ SG_ EPAS3S_handsOnLevel : 38|2@1+ (1,0) [0|3] "" ETH
+ SG_ EPAS3S_internalSAS : 37|14@0+ (0.1,-819.2) [-819.2|819.1] "deg" ETH
+ SG_ EPAS3S_internalSASQF : 4|1@1+ (1,0) [0|1] "" ETH
+ SG_ EPAS3S_steeringFault : 2|1@1+ (1,0) [0|1] "" ETH
+ SG_ EPAS3S_steeringRackForce : 1|10@0+ (50,-25575) [-25575|25575] "N" ETH
+ SG_ EPAS3S_steeringReduced : 3|1@1+ (1,0) [0|1] "" ETH
+ SG_ EPAS3S_sysStatusChecksum : 56|8@1+ (1,0) [0|255] "" ETH
+ SG_ EPAS3S_sysStatusCounter : 48|4@1+ (1,0) [0|15] "" ETH
+ SG_ EPAS3S_torsionBarTorque : 19|12@0+ (0.01,-20.5) [-20.5|20.45] "Nm" ETH
