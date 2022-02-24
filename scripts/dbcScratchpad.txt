@@ -1,7 +1,7 @@
 The first line is the can message ID, name and bitlength. 883 decimal is message ID 0x373 in hex, length is 8 bytes.
 Then follows each of the signals in the message... name, start bit location, bit length, data format and scaling...
 
-BO_ 883 ID3373EPAS3P_sysStatus: 8 ETH
+BO_ 883 ID373EPAS3P_sysStatus: 8 ETH
  SG_ EPAS3P_currentTuneMode : 5|3@1+ (1,0) [0|7] "" ETH
  SG_ EPAS3P_eacErrorCode : 20|4@1+ (1,0) [0|15] "" ETH
  SG_ EPAS3P_eacStatus : 53|3@1+ (1,0) [0|7] "" ETH
