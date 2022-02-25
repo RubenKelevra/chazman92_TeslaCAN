@@ -171,7 +171,7 @@ while True:
                 #autoDownloadPath = '/Users/chuckcook/Data Drive/TeslaVideos/CanLogs/AutoDownloads/'  #MAC Path
                 autoDownloadPath = '/home/pi/logs/autodownloads/'  #TeslaCan Path
                 autoDownloadFilename = autoDownloadPath + datetime.datetime.now().strftime("%Y-%m%d-%H%M") + "-" + fileToDownload
-                convertedFilename = autoDownloadPath + datetime.datetime.now().strftime("%Y-%m%d-%H%M") + "-converted_" + fileToDownload
+                convertedFilename = autoDownloadPath + "converted/" + datetime.datetime.now().strftime("%Y-%m%d-%H%M") + "-converted_" + fileToDownload
                 filename, headers = request.urlretrieve(downloadURL, autoDownloadFilename)
 
                 #download completed. 
@@ -181,6 +181,8 @@ while True:
                 resp = request.urlopen(req)
 
             except error.URLError as e:
+                #print(autoDownloadFilename)
+                #print(downloadURL)
                 print("Error downloading: " + fileToDownload)
 
             #ConvertASC
@@ -190,9 +192,9 @@ while True:
                 print ("File Converted ...")
 
             except:
-                print("Error converting to ASC")
+                # print("Error converting to ASC")
                 e = sys.exc_info()[0]
-                write_to_page( "<p>Error: %s</p>" % e )
+                print( "Error: %s" % e )
 
         print ("Sleeping 60 seconds")
         sleepTime = 60
