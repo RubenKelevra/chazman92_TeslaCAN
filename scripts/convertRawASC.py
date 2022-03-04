@@ -96,13 +96,19 @@ def convertRawtoASC(inputFilename, outputFilename):
                         framepayload = file.read(framelength)
 
                         frametime = lastSyncTime + frametimeoffset
+                        
+                        #if frameId in list print
+                        msgIDs = [0x04F, 0x101, 0x108, 0x111, 0x118, 0x129, 0x145, 0x257, 0x318, 0x399, 0x3B6]
 
-                        print("({0:017F})".format(frametime/1000000), end='')
-                        print(" can%d " % (busid), end='')
-                        print("{0:03X}#".format(frameid), end='')
-                        for payloadByte in framepayload:
-                            print("{0:02X}".format(payloadByte), end='')
-                        print("")
+                        if hex(frameid) in msgIDs:
+                            print(frameid, end='')
+                            print(hex(frameid), end='')
+                            print("({0:017F})".format(frametime/1000000), end='')
+                            print(" can%d " % (busid), end='')
+                            print("{0:03X}#".format(frameid), end='')
+                            for payloadByte in framepayload:
+                                print("{0:02X}".format(payloadByte), end='')
+                            print("")
 
                     else:
                         break
