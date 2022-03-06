@@ -41,7 +41,7 @@ echo running command - canplayer $bus -l $loops -I /home/pi/logs/$logfile
 canplayer $bus -l $loops -I /home/pi/logs/$logfile
 
 echo
-echo 'Kill mqttpy.py processes? (Y) ' killmqtt
+read -p 'Kill mqttpy.py processes? (Y) ' killmqtt
 if [[ $killmqtt = "Y"]]
 then
   kill $(pgrep -f 'mqttpy.py')
