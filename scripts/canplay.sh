@@ -5,6 +5,9 @@ echo Logfiles are played from /home/pi/logs
 search_dir=/home/pi/logs
 yourfilenames=`ls $search_dir/*.log`
 
+#kill any running mqttpy.py instances
+kill $(pgrep -f 'mqttpy.py')
+
 echo
 read -p 'Run mqttpy.py? (Y) ' runmqtt
 
@@ -33,7 +36,7 @@ if [[ $format == "S" ]]
 then
   bus=""
 else
-  bus="vcan0=can0 vcan1=can1"
+  bus="vcan0=can1 vcan1=can0"
 fi
 echo
 echo running command - canplayer $bus -l $loops -I /home/pi/logs/$logfile

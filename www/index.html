@@ -131,21 +131,9 @@
         </div>
 
         <div class="col-sm mx-1">
-          <div class="card text-light bg-dark h-100 text-center">
-            <div class="card-body font-weight-bold" style="font-size: 18px">
-              Acceleration (g)
-              <br />
-              <span style="float: left; font-size: 20px">&nbsp&nbspLat: </span
-              ><span id="lat-accel" style="font-size: 22px">N/A</span>
-              <br />
-              <span style="float: left; font-size: 20px">&nbsp&nbspLong: </span
-              ><span id="lon-accel" style="font-size: 22px">N/A</span>
-              <!-- <br>
-          <span style="float:left;">&nbsp&nbspVert: </span><span id="vert_accel" style="font-size: 20px; font-family: monospace;">N/A</span> -->
-            </div>
-          </div>
+          <div class="latjerk-card-body bg-dark h-100"></div>
         </div>
-
+        
         <div class="col-sm mx-1">
           <div class="card text-light bg-dark h-100 text-center">
             <div class="card-body font-weight-bold" style="font-size: 18px">
@@ -225,6 +213,23 @@
               <span id="odometer" style="font-size: 20px">N/A</span>
               <br />
             </div>
+
+            <div class="col-sm mx-1">
+              <div class="card text-light bg-dark h-100 text-center">
+                <div class="card-body font-weight-bold" style="font-size: 18px">
+                  Acceleration (g)
+                  <br />
+                  <span style="float: left; font-size: 20px">&nbsp&nbspLat: </span
+                  ><span id="lat-accel" style="font-size: 22px">N/A</span>
+                  <br />
+                  <span style="float: left; font-size: 20px">&nbsp&nbspLong: </span
+                  ><span id="lon-accel" style="font-size: 22px">N/A</span>
+                  <!-- <br>
+              <span style="float:left;">&nbsp&nbspVert: </span><span id="vert_accel" style="font-size: 20px; font-family: monospace;">N/A</span> -->
+                </div>
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>
@@ -276,6 +281,12 @@
     var long_redraw_time_ms = 50;
     var svg1, long_line;
 
+    //jerk long plot
+    var lat_jerk_redraw_time_ms = 50;
+    var svgJerk, lat_jerk_line;
+    var setting_jerk_xscale_G = 10; //dual axis-accel plot horizontal scale in G's
+    var setting_jerk_yscale_G = 10; //dual axis-accel plot vertical scale in G's
+
     //fading tail
     var tail_redraw_time_ms = 100; //can be changed
     var tail_zScale, tail_yScale, tail_zScale, tail_RadiusScale, tail_FillScale,tail_FillScaleAPengaged;
@@ -295,6 +306,10 @@
     if (MQTT_enabled) MQTTconnect();
     else similulate_data_feed();
 
+
+    lat_jerk_time_plot_initialise();
+    lat_jerk_time_plot_redraw_loop();
+
     long_accel_time_plot_initialise();
     long_accel_time_plot_redraw_loop();
 
@@ -307,7 +322,7 @@
       TESTING_get_test_data();
       TESTING_push_out_data_to_display_sets();
     }
-
+    
     function updateDataset(lat, long, vert) {
       console.log(lat, long, vert);
       raw_display_data.push({ lat: lat, long: long, vert: vert }); //Add one record to end of array.
@@ -428,7 +443,7 @@
 
     function long_accel_time_plot_initialise() {
       var innerWidth = 190,
-        innerHeight = 125;
+          innerHeight = 125;
       var margin = {
           top: 10,
           right: 10,
@@ -491,6 +506,73 @@
         .style("font-weight", "700")
         .text("Long Accel.");
     }
+
+    function lat_jerk_time_plot_initialise() {
+      var innerWidth = 190,
+          innerHeight = 125;
+      var margin = {
+          top: 10,
+          right: 10,
+          bottom: 50,
+          left: 20,
+        },
+        width = innerWidth - margin.left - margin.right, // Use the window's width
+        height = innerHeight - margin.top - margin.bottom; // Use the window's height
+
+      var lat_jerk_xScale = d3
+        .scaleLinear()
+        .domain([0, display_n - 1]) // input
+        .range([0, width]); // output
+
+      var lat_jerk_yScale = d3
+        .scaleLinear()
+        .domain([mysin(setting_jerk_yscale_G, "y"), mysin(-setting_jerk_yscale_G, "y")]) // input
+        .range([height, 0]); // output
+
+      // d3's line generator
+      lat_jerk_line = d3
+        .line()
+        .x(function (d, i) {
+          return lat_jerk_xScale(i);
+        }) // set the x values for the line generator
+        .y(function (d) {
+          return lat_jerk_yScale(d.y);
+        }) // set the y values for the line generator
+        .curve(d3.curveMonotoneX); // apply smoothing to the line
+
+      // 1. Add the SVG to the page and employ #2
+      svgJerk = d3
+        .select(".latjerk-card-body")
+        .append("svg")
+        .attr("id", "lat-jerk-plot")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      svgJerk
+        .append("line")
+        .attr("transform", "translate(0," + height / 2 + ")")
+        .style("stroke", "yellow")
+        .style("stroke-width", 1)
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", width)
+        .attr("y2", 0);
+
+      //Title
+      svgJerk
+        .append("text")
+        .attr("x", 0)
+        .attr("y", 10)
+        .attr("text-anchor", "left")
+        .style("font-size", "20px")
+        .style("fill", "#FFFF00")
+        .style("font-family", "Arial, Helvetica, sans-serif")
+        .style("font-weight", "700")
+        .text("Lat Jerk");
+    }
+    
     function empty_to_zero(value) {
       if (!value) value = 0;
       return value;
@@ -521,6 +603,34 @@
         setTimeout(long_accel_time_plot_redraw_loop, long_redraw_time_ms);
     }
 
+    function lat_jerk_time_plot_redraw_loop() {
+      // copy data from smoothed_display_data
+      lat_jerk_display_data = [];
+      //raw_display_data.push({ lat: lat, long: long, vert: vert }); //Add one record to end of array.
+      var last_lat = 0;
+      for (const row of smoothed_display_data) {
+        jerk = (row.lat - last_lat)/.1;
+        lat_jerk_display_data.push({ y: empty_to_zero(mysin(jerk, "y")) });
+      }
+
+      d3.select("#my_path_jerk").remove(); //clear the previous line draw on the chart
+
+      //Append the path, bind the data, and call the line generator
+      //.xaxis stroke settings are in .css at the top of the file
+      svgJerk
+        .append("path")
+        .attr("id", "my_path_jerk")
+        .datum(lat_jerk_display_data) // 10. Binds data to the line
+        .attr("class", "line") // Assign a class for styling
+        .attr("d", lat_jerk_line) // 11. Calls the line generator
+        .style("fill", "none")
+        .style("stroke", "#FFFF00")
+        .style("stroke-width", 3);
+
+      if (window.performance.now() < pause_time_ms || pause_time_ms == 0)
+        setTimeout(lat_jerk_time_plot_redraw_loop, lat_jerk_redraw_time_ms);
+    }
+    
     function fading_tail_initialise() {
       var innerWidth = 150; //adjust to control the display size of the visualisation
       var innerHeight = 150;
