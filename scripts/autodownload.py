@@ -1,4 +1,4 @@
-CANServer_address = "192.168.1.112"
+CANServer_address = "192.168.1.48"
 #CANServer_address = "canserver.local"
 #Filter applied to conversion
 msgIDs = [0x04F, 0x101, 0x108, 0x111, 0x118, 0x129, 0x145, 0x257, 0x318, 0x399, 0x3B6]
@@ -107,7 +107,7 @@ def convertRawtoASC(inputFilename, outputFilename):
 
                         frametime = lastSyncTime + frametimeoffset
 
-                        #if frameId in list convert
+                        #if frameId in list download
                         if frameid in msgIDs:  #msgIDs Array in Global variables for filter
                             print("({0:017F})".format(frametime/1000000), end='')
                             print(" can%d " % (busid), end='')
@@ -175,7 +175,7 @@ while True:
                 #autoDownloadPath = '/Users/chuckcook/Data Drive/TeslaVideos/CanLogs/AutoDownloads/'  #MAC Path
                 autoDownloadPath = '/home/pi/logs/autodownloads/'  #TeslaCan Path
                 autoDownloadFilename = autoDownloadPath + datetime.datetime.now().strftime("%Y-%m%d-%H%M") + "-" + fileToDownload
-                convertedFilename = autoDownloadPath + "converted/" + "converted_" + fileToDownload
+                
                 #convertedFilename = autoDownloadPath + "converted/" + datetime.datetime.now().strftime("%Y-%m%d-%H%M") + "-converted_" + fileToDownload
                 filename, headers = request.urlretrieve(downloadURL, autoDownloadFilename)
 
@@ -192,6 +192,9 @@ while True:
 
             #ConvertASC
             try:
+                #create converted filepath
+                convertedFilename = autoDownloadPath + "converted/%b%d/" + datetime.datetime.now().strftime("%m%d-") + "converted_" + fileToDownload
+
                 print ("Converting file ...")
                 convertRawtoASC(autoDownloadFilename, convertedFilename)
                 print ("File Converted ...")
